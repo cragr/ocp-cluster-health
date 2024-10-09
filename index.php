@@ -5,15 +5,9 @@ $api_url = getenv('API_URL');
 
 // Perform oc login using the token and URL
 if ($api_token && $api_url) {
-    $login_command = "oc login --token=$api_token $api_url";
+    $login_command = "oc login --token=$api_token $api_url --insecure-skip-tls-verify";
     $login_output = shell_exec($login_command);
 
-    if (strpos($login_output, 'Logged into') !== false) {
-        echo "<p>Successfully logged into OpenShift API</p>";
-    } else {
-        echo "<p>Failed to login to OpenShift API</p>";
-        exit(); // Stop further execution if login fails
-    }
 } else {
     echo "<p>API_TOKEN and API_URL environment variables are not set.</p>";
     exit(); // Stop further execution if environment variables are missing
@@ -35,28 +29,29 @@ echo '<h2>Cluster Version History</h2>';
 $cluster_version_output = shell_exec('oc get clusterversion version -o json | jq -r \'.status.history[] | "\(.version),\(.state),\(.startedTime),\(.completionTime)"\'');
 
 if ($cluster_version_output) {
-    // Start the HTML table for cluster version history
-    echo "<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse; width: 70%; text-align: left;'>";
-    echo "<tr style='background-color: #f2f2f2;'><th>Version</th><th>State</th><th>Started Time</th><th>Completed Time</th></tr>";
+    // Wrap output in <pre> to preserve formatting
+    echo "<pre>";
 
-    // Split the output into rows and populate the table
+    // Print the table header
+    echo str_pad("VERSION", 12) . str_pad("STATE", 12) . str_pad("STARTED TIME", 30) . str_pad("COMPLETED TIME", 30) . "\n";
+    echo str_repeat("-", 84) . "\n";
+
+    // Split the output into rows and format the data into columns
     $rows = explode("\n", trim($cluster_version_output));
     foreach ($rows as $row) {
         if (!empty($row)) {
             $fields = explode(",", $row);
-            echo "<tr>";
-            echo "<td>" . htmlspecialchars($fields[0]) . "</td>";
-            echo "<td>" . htmlspecialchars($fields[1]) . "</td>";
-            echo "<td>" . htmlspecialchars($fields[2]) . "</td>";
-            echo "<td>" . htmlspecialchars($fields[3]) . "</td>";
-            echo "</tr>";
+            echo str_pad($fields[0], 12); // Version
+            echo str_pad($fields[1], 12); // State
+            echo str_pad($fields[2], 30); // Started Time
+            echo str_pad($fields[3], 30); // Completed Time
+            echo "\n";
         }
     }
 
-    // Close the HTML table
-    echo "</table>";
+    echo "</pre>";
 } else {
-    echo "<p>Failed to fetch cluster version history.</p>";
+    echo "Failed to fetch cluster version information.\n";
 }
 
 echo '<h2>Check the status of OpenShift nodes</h2>';
@@ -77,6 +72,18 @@ echo '<pre>' . shell_exec('oc adm top pods -n openshift-ingress') . '</pre>';
 echo '<h2>Monitoring Pod Status</h2>';
 echo '<pre>' . shell_exec('oc get pods -n openshift-monitoring') . '</pre>';
 
+// Fetch critical events
+$critical_events_output = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
+
+// Display the Critical Events section
 echo '<h2>Critical Events</h2>';
-echo '<pre>' . shell_exec("oc get events --all-namespaces | grep -E 'Critical'") . '</pre>';
+
+// Check if shell_exec returned null or an empty string
+if ($critical_events_output === null || trim($critical_events_output) === '') {
+    // If no critical events are found or the command failed, display a message
+    echo '<pre>No critical events found.</pre>';
+} else {
+    // If critical events are found, display the output
+    echo '<pre>' . $critical_events_output . '</pre>';
+}
 ?>
