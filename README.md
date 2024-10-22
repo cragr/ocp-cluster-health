@@ -1,14 +1,14 @@
-OCP Cluster Health Monitor
+OCP Cluster Health Report
 ==========================
 
-The OCP Cluster Health Monitor provides a simple web-based health check for an OpenShift cluster. This quickstart guide will walk you through installing the cluster-health monitor application using a provided YAML configuration file.
+The OCP Cluster Health Report provides a simple web-based health check for an OpenShift cluster. This quickstart guide will walk you through installing the cluster-health PHP application using a provided YAML configuration file.
 
-![Cluster Health Monitor Diagram](images/health_report.png)
+![Cluster Health Report Diagram](images/health_report.png)
 
 Quickstart Installation
 -----------------------
 
-To deploy the cluster-health monitor, run the following command:
+To deploy the cluster-health report, run the following command:
 
 ```
 oc apply -f https://github.com/cragr/ocp-cluster-health/raw/refs/heads/main/cluster-health-app.yaml
@@ -59,7 +59,7 @@ oc get events -n cluster-health`
 Cleanup
 -------
 
-To remove the cluster-health monitor and all related resources, run:
+To remove the cluster-health report and all related resources, run:
 
 ```
 oc delete -f https://github.com/cragr/ocp-cluster-health/raw/refs/heads/main/cluster-health-app.yaml
