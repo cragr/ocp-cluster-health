@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cluster-health
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-health-app-cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: cluster-health-app
+    namespace: cluster-health
+roleRef:
+  kind: ClusterRole
+  name: cluster-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+  annotations:
+    build.openshift.io/instantiate: "true"
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/cragr/ocp-cluster-health.git
+      ref: main
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: php82-oc-cli:latest
+        namespace: cluster-health
+  output:
+    to:
+      kind: ImageStreamTag
+      name: cluster-health-app:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange:
+        from:
+          kind: ImageStreamTag
+          name: php82-oc-cli:latest
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: php82-oc-cli
+  namespace: cluster-health
+spec:
+  tags:
+    - name: latest
+      from:
+        kind: DockerImage
+        name: quay.io/cragr/php82-oc-cli:latest
+      importPolicy:
+        importMode: Legacy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cluster-health-app
+  template:
+    metadata:
+      labels:
+        app: cluster-health-app
+    spec:
+      serviceAccountName: cluster-health-app
+      containers:
+        - name: cluster-health-app
+          image: "image-registry.openshift-image-registry.svc:5000/cluster-health/cluster-health-app:latest"
+          env:
+            - name: PHP_CLEAR_ENV
+              value: "OFF"
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cluster-health-app-token
+                  key: token
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "10m"
+            limits:
+              memory: "250Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /healthz.html
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz.html
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 3
+  triggers:
+  - type: ImageChange
+    imageChangeParams:
+      automatic: true
+      containerNames:
+        - cluster-health-app
+      from:
+        kind: ImageStreamTag
+        name: cluster-health-app:latest
+        namespace: cluster-health
+  strategy:
+    type: RollingUpdate
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - cluster-health-app
+        from:
+          kind: ImageStreamTag
+          name: cluster-health-app:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: cluster-health-app
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cluster-health-app
+  namespace: cluster-health
+spec:
+  to:
+    kind: Service
+    name: cluster-health-app
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-health-app-token
+  namespace: cluster-health
+  annotations:
+    kubernetes.io/service-account.name: cluster-health-app
+type: kubernetes.io/service-account-token
