@@ -40,7 +40,7 @@ spec:
     sourceStrategy:
       from:
         kind: ImageStreamTag
-        name: php82-oc-cli:latest
+        name: php83-oc-cli:latest
         namespace: cluster-health
   output:
     to:
@@ -52,7 +52,7 @@ spec:
       imageChange:
         from:
           kind: ImageStreamTag
-          name: php82-oc-cli:latest
+          name: php83-oc-cli:latest
 ---
 apiVersion: image.openshift.io/v1
 kind: ImageStream
@@ -63,14 +63,14 @@ metadata:
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-  name: php82-oc-cli
+  name: php83-oc-cli
   namespace: cluster-health
 spec:
   tags:
     - name: latest
       from:
         kind: DockerImage
-        name: quay.io/cragr/php82-oc-cli:latest
+        name: quay.io/cragr/php83-oc-cli:latest
       importPolicy:
         importMode: Legacy
 ---

@@ -1,4 +1,4 @@
-FROM ubi9/s2i-base:1
+FROM quay.io/sclorg/s2i-base-c10s:c10s
 
 # This image provides an Apache+PHP environment for running PHP
 # applications.
@@ -7,12 +7,12 @@ EXPOSE 8080
 EXPOSE 8443
 
 # Description
-# This image provides an Apache 2.4 + PHP 8.0 environment for running PHP applications.
+# This image provides an Apache 2.4 + PHP 7.4 environment for running PHP applications.
 # Exposed ports:
 # * 8080 - alternative port for http
 
-ENV PHP_VERSION=8.2 \
-    PHP_VER_SHORT=82 \
+ENV PHP_VERSION=8.3 \
+    PHP_VER_SHORT=83 \
     NAME=php \
     OC_CLIENT_URL=https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
 
@@ -33,27 +33,29 @@ LABEL summary="${SUMMARY}" \
       io.openshift.tags="builder,${NAME},${NAME}${PHP_VER_SHORT},${NAME}-${PHP_VER_SHORT}" \
       io.openshift.s2i.scripts-url="image:///usr/libexec/s2i" \
       io.s2i.scripts-url="image:///usr/libexec/s2i" \
-      name="ubi9/${NAME}-${PHP_VER_SHORT}" \
+      name="sclorg/${NAME}-${PHP_VER_SHORT}-c10s" \
       com.redhat.component="${NAME}-${PHP_VER_SHORT}-container" \
       version="1" \
       com.redhat.license_terms="https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI" \
       help="For more information visit https://github.com/sclorg/s2i-${NAME}-container" \
-      usage="s2i build https://github.com/sclorg/s2i-php-container.git --context-dir=${PHP_VERSION}/test/test-app ubi9/${NAME}-${PHP_VER_SHORT} sample-server" \
+      usage="s2i build https://github.com/sclorg/s2i-php-container.git --context-dir=${PHP_VERSION}/test/test-app sclorg/${NAME}-${PHP_VER_SHORT}-c10s sample-server" \
       maintainer="SoftwareCollections.org <sclorg@redhat.com>"
 
 # Install Apache httpd and PHP
-ARG INSTALL_PKGS="php php-fpm php-mysqlnd php-pgsql php-bcmath \
+ARG INSTALL_PKGS="php php-fpm mod_ssl hostname tar jq"
+ARG INSTALL_EXTS="php-json php-mysqli php-pgsql php-bcmath \
                   php-gd php-intl php-ldap php-mbstring php-pdo \
                   php-process php-soap php-opcache php-xml \
-                  php-gmp php-pecl-apcu php-pecl-zip mod_ssl hostname \
-                  tar jq"
+                  php-gmp php-apcu php-zip php-redis"
 
-RUN yum module -y enable php:$PHP_VERSION && \
-    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
-    yum reinstall -y tzdata && \
+RUN dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS $INSTALL_EXTS && \
+    dnf reinstall -y tzdata && \
     rpm -V $INSTALL_PKGS && \
-    php -v | grep -qe "v$PHP_VERSION\." && echo "Found VERSION $PHP_VERSION" && \
-    yum -y clean all --enablerepo='*'
+    php -v | grep -qe "v$PHP_VERSION\." && \
+        echo "Found VERSION $PHP_VERSION" && \
+    for ext in $(echo $INSTALL_EXTS | sed s/php-//g) ; do php -m | grep -qi "$ext\$"; done && \
+        echo "Found requested extensions" && \
+    dnf -y clean all --enablerepo='*'
 
 ENV PHP_CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/php/ \
     APP_DATA=${APP_ROOT}/src \
@@ -63,7 +65,6 @@ ENV PHP_CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/php/ \
     PHP_FPM_CONF_D_PATH=/etc/php-fpm.d \
     PHP_FPM_CONF_FILE=www.conf \
     PHP_FPM_RUN_DIR=/run/php-fpm \
-    PHP_CLEAR_ENV=ON \
     PHP_MAIN_FPM_CONF_FILE=/etc/php-fpm.conf \
     PHP_FPM_LOG_PATH=/var/log/php-fpm \
     HTTPD_CONFIGURATION_PATH=${APP_ROOT}/etc/conf.d \
@@ -90,10 +91,6 @@ COPY ./root/ /
 
 # Reset permissions of filesystem to default values
 RUN /usr/libexec/container-setup && rpm-file-permissions
-
-# RPM uses a wrong file in the config
-# Related: https://bugzilla.redhat.com/show_bug.cgi?id=2092356
-RUN sed -i "s/mod_php7.c/mod_php.c/" /etc/httpd/conf.d/php.conf
 
 USER 1001
 
