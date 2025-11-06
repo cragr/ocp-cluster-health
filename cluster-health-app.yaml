@@ -30,11 +30,13 @@ metadata:
   annotations:
     build.openshift.io/instantiate: "true"
 spec:
+  successfulBuildsHistoryLimit: 3
+  failedBuildsHistoryLimit: 3
   source:
     type: Git
     git:
       uri: https://github.com/cragr/ocp-cluster-health.git
-      ref: main
+      ref: eff25935c9d61d5151276ef7f14c9bad5abfff1b
   strategy:
     type: Source
     sourceStrategy:
@@ -42,17 +44,18 @@ spec:
         kind: ImageStreamTag
         name: php83-oc-cli:latest
         namespace: cluster-health
+      env:
+        - name: COMPOSER_ALLOW_SUPERUSER
+          value: "1"
   output:
     to:
       kind: ImageStreamTag
       name: cluster-health-app:latest
   triggers:
     - type: ConfigChange
-    - type: ImageChange
-      imageChange:
-        from:
-          kind: ImageStreamTag
-          name: php83-oc-cli:latest
+  postCommit:
+    script: |
+      php -l /opt/app-root/src/index.php
 ---
 apiVersion: image.openshift.io/v1
 kind: ImageStream
@@ -92,25 +95,18 @@ spec:
       serviceAccountName: cluster-health-app
       containers:
         - name: cluster-health-app
-          image: "image-registry.openshift-image-registry.svc:5000/cluster-health/cluster-health-app:latest"
-          env:
-            - name: PHP_CLEAR_ENV
-              value: "OFF"
-            - name: API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: cluster-health-app-token
-                  key: token
+          image: image-registry.openshift-image-registry.svc:5000/cluster-health/cluster-health-app:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               protocol: TCP
           resources:
             requests:
-              memory: "50Mi"
-              cpu: "10m"
+              memory: 50Mi
+              cpu: 10m
             limits:
-              memory: "250Mi"
-              cpu: "500m"
+              memory: 250Mi
+              cpu: 500m
           readinessProbe:
             httpGet:
               path: /healthz.html
@@ -125,27 +121,8 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 30
             failureThreshold: 3
-  triggers:
-  - type: ImageChange
-    imageChangeParams:
-      automatic: true
-      containerNames:
-        - cluster-health-app
-      from:
-        kind: ImageStreamTag
-        name: cluster-health-app:latest
-        namespace: cluster-health
   strategy:
     type: RollingUpdate
-  triggers:
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-          - cluster-health-app
-        from:
-          kind: ImageStreamTag
-          name: cluster-health-app:latest
 ---
 apiVersion: v1
 kind: Service
@@ -173,12 +150,3 @@ spec:
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cluster-health-app-token
-  namespace: cluster-health
-  annotations:
-    kubernetes.io/service-account.name: cluster-health-app
-type: kubernetes.io/service-account-token
