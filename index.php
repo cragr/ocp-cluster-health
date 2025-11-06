@@ -100,16 +100,21 @@ function renderCommandSection(string $title, array $command): string
     $result = runCommand($command);
 
     if ($result['timedOut']) {
-        $body = '<div class="error">Command timed out after the allotted period.</div>';
+        $body = '<div class="error" role="alert">Command timed out after the allotted period.</div>';
     } elseif ($result['exitCode'] !== 0) {
         $message = htmlspecialchars(trim($result['stderr']) ?: 'Unknown error', ENT_QUOTES, 'UTF-8');
-        $body = '<div class="error">Command failed: ' . $message . '</div>';
+        $body = '<div class="error" role="alert">Command failed: ' . $message . '</div>';
     } else {
         $output = htmlspecialchars(trim($result['stdout']), ENT_QUOTES, 'UTF-8');
-        $body = '<pre>' . ($output !== '' ? $output : 'No data returned.') . '</pre>';
+        $body = '<pre class="code-block">' . ($output !== '' ? $output : 'No data returned.') . '</pre>';
     }
 
-    return '<section><h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>' . $body . '</section>';
+    return '<section class="report-card">'
+        . '<div class="section-header">'
+        . '<h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . '</div>'
+        . $body
+        . '</section>';
 }
 
 /**
@@ -120,17 +125,26 @@ function renderClusterVersionHistory(): string
     $result = runCommand(['oc', 'get', 'clusterversion', 'version', '-o', 'json']);
 
     if ($result['timedOut']) {
-        return '<section><h2>Cluster Version History</h2><div class="error">Command timed out after the allotted period.</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Cluster Version History</h2></div>'
+            . '<div class="error" role="alert">Command timed out after the allotted period.</div>'
+            . '</section>';
     }
 
     if ($result['exitCode'] !== 0) {
         $message = htmlspecialchars(trim($result['stderr']) ?: 'Unknown error', ENT_QUOTES, 'UTF-8');
-        return '<section><h2>Cluster Version History</h2><div class="error">Unable to retrieve cluster version history: ' . $message . '</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Cluster Version History</h2></div>'
+            . '<div class="error" role="alert">Unable to retrieve cluster version history: ' . $message . '</div>'
+            . '</section>';
     }
 
     $json = json_decode($result['stdout'], true);
     if (!is_array($json) || !isset($json['status']['history']) || !is_array($json['status']['history'])) {
-        return '<section><h2>Cluster Version History</h2><div class="error">Unexpected response format from oc.</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Cluster Version History</h2></div>'
+            . '<div class="error" role="alert">Unexpected response format from oc.</div>'
+            . '</section>';
     }
 
     $rows = '';
@@ -140,13 +154,23 @@ function renderClusterVersionHistory(): string
         }
 
         $version = htmlspecialchars((string)($entry['version'] ?? 'Unknown'), ENT_QUOTES, 'UTF-8');
-        $state = htmlspecialchars((string)($entry['state'] ?? 'Unknown'), ENT_QUOTES, 'UTF-8');
+        $stateRaw = (string)($entry['state'] ?? 'Unknown');
+        $state = htmlspecialchars($stateRaw, ENT_QUOTES, 'UTF-8');
         $started = htmlspecialchars((string)($entry['startedTime'] ?? '—'), ENT_QUOTES, 'UTF-8');
         $completed = htmlspecialchars((string)($entry['completionTime'] ?? '—'), ENT_QUOTES, 'UTF-8');
 
+        $stateClass = 'status-badge status-neutral';
+        if (stripos($stateRaw, 'completed') !== false) {
+            $stateClass = 'status-badge status-success';
+        } elseif (stripos($stateRaw, 'failing') !== false || stripos($stateRaw, 'failed') !== false) {
+            $stateClass = 'status-badge status-danger';
+        } elseif (stripos($stateRaw, 'partial') !== false || stripos($stateRaw, 'progress') !== false) {
+            $stateClass = 'status-badge status-warning';
+        }
+
         $rows .= '<tr>'
             . '<td>' . $version . '</td>'
-            . '<td>' . $state . '</td>'
+            . '<td><span class="' . $stateClass . '">' . $state . '</span></td>'
             . '<td>' . $started . '</td>'
             . '<td>' . $completed . '</td>'
             . '</tr>';
@@ -156,7 +180,8 @@ function renderClusterVersionHistory(): string
         $rows = '<tr><td colspan="4">No history entries reported.</td></tr>';
     }
 
-    return '<section><h2>Cluster Version History</h2>'
+    return '<section class="report-card">'
+        . '<div class="section-header"><h2>Cluster Version History</h2></div>'
         . '<div class="table-wrapper">'
         . '<table>'
         . '<thead><tr><th>Version</th><th>State</th><th>Started</th><th>Completed</th></tr></thead>'
@@ -174,17 +199,26 @@ function renderCriticalEvents(): string
     $result = runCommand(['oc', 'get', 'events', '--all-namespaces', '-o', 'json']);
 
     if ($result['timedOut']) {
-        return '<section><h2>Critical Events</h2><div class="error">Command timed out after the allotted period.</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Critical Events</h2></div>'
+            . '<div class="error" role="alert">Command timed out after the allotted period.</div>'
+            . '</section>';
     }
 
     if ($result['exitCode'] !== 0) {
         $message = htmlspecialchars(trim($result['stderr']) ?: 'Unknown error', ENT_QUOTES, 'UTF-8');
-        return '<section><h2>Critical Events</h2><div class="error">Unable to retrieve events: ' . $message . '</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Critical Events</h2></div>'
+            . '<div class="error" role="alert">Unable to retrieve events: ' . $message . '</div>'
+            . '</section>';
     }
 
     $json = json_decode($result['stdout'], true);
     if (!is_array($json) || !isset($json['items']) || !is_array($json['items'])) {
-        return '<section><h2>Critical Events</h2><div class="error">Unexpected response format from oc.</div></section>';
+        return '<section class="report-card">'
+            . '<div class="section-header"><h2>Critical Events</h2></div>'
+            . '<div class="error" role="alert">Unexpected response format from oc.</div>'
+            . '</section>';
     }
 
     $rows = '';
@@ -209,11 +243,18 @@ function renderCriticalEvents(): string
         $count = htmlspecialchars((string)($event['count'] ?? ''), ENT_QUOTES, 'UTF-8');
         $lastSeen = htmlspecialchars((string)($event['lastTimestamp'] ?? $event['eventTime'] ?? '—'), ENT_QUOTES, 'UTF-8');
 
+        $typeClass = 'status-badge status-warning';
+        if (stripos($typeRaw, 'error') !== false || stripos($typeRaw, 'critical') !== false) {
+            $typeClass = 'status-badge status-danger';
+        } elseif (stripos($typeRaw, 'normal') !== false) {
+            $typeClass = 'status-badge status-neutral';
+        }
+
         $rows .= '<tr>'
             . '<td>' . $namespace . '</td>'
             . '<td>' . $name . '</td>'
-            . '<td>' . $type . '</td>'
-            . '<td>' . $reason . '</td>'
+            . '<td><span class="' . $typeClass . '">' . $type . '</span></td>'
+            . '<td><span class="status-badge status-accent">' . $reason . '</span></td>'
             . '<td>' . $message . '</td>'
             . '<td>' . $count . '</td>'
             . '<td>' . $lastSeen . '</td>'
@@ -224,7 +265,8 @@ function renderCriticalEvents(): string
         $rows = '<tr><td colspan="7">No critical events found.</td></tr>';
     }
 
-    return '<section><h2>Critical Events</h2>'
+    return '<section class="report-card">'
+        . '<div class="section-header"><h2>Critical Events</h2></div>'
         . '<div class="table-wrapper">'
         . '<table>'
         . '<thead><tr><th>Namespace</th><th>Name</th><th>Type</th><th>Reason</th><th>Message</th><th>Count</th><th>Last Seen</th></tr></thead>'
@@ -342,160 +384,320 @@ foreach ($sectionDefinitions as $id => $definition) {
     <style>
         :root {
             color-scheme: light dark;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            line-height: 1.5;
+            --osc-font-family: "Red Hat Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            --osc-line-height: 1.6;
+            --osc-color-body-bg: #f5f5f5; /* $pf-color-black-100 */
+            --osc-color-body-bg-soft: #f0f0f0; /* $pf-color-black-150 */
+            --osc-color-surface: #ffffff;
+            --osc-color-surface-alt: #fdfdfd;
+            --osc-color-surface-border: #d2d2d2; /* $pf-color-black-200 */
+            --osc-color-text: #151515; /* $pf-color-black-900 */
+            --osc-color-text-subtle: #4f5255; /* $pf-color-black-500 */
+            --osc-color-muted: #6a6e73; /* $pf-color-black-400 */
+            --osc-color-header-start: #004b95; /* $pf-color-blue-600 */
+            --osc-color-header-end: #0066cc; /* --pf-global--primary-color--100 */
+            --osc-color-primary: #0066cc;
+            --osc-color-primary-soft: #73bcf7; /* $pf-color-blue-200 */
+            --osc-color-primary-muted: #bee1f4; /* $pf-color-blue-100 */
+            --osc-color-progress-bg: #def3ff; /* $pf-color-blue-50 */
+            --osc-color-accent-cyan: #009596; /* $pf-color-cyan-300 */
+            --osc-color-accent-gold: #f4c145; /* $pf-color-gold-400 */
+            --osc-color-accent-green: #3e8635; /* $pf-color-green-500 */
+            --osc-color-accent-red: #c9190b; /* $pf-color-red-100 */
+            --osc-color-card-shadow: rgba(3, 3, 3, 0.12);
+            --osc-color-card-shadow-strong: rgba(3, 3, 3, 0.18);
+            --osc-border-radius-lg: 18px;
+            --osc-border-radius-md: 12px;
+            line-height: var(--osc-line-height);
+            font-family: var(--osc-font-family);
         }
 
         body {
             margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-            color: #222;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--osc-color-body-bg) 0%, var(--osc-color-body-bg-soft) 45%, var(--osc-color-body-bg) 100%);
+            color: var(--osc-color-text);
+            font-family: var(--osc-font-family);
         }
 
         body.dark-mode {
-            background-color: #111;
-            color: #f5f5f5;
+            --osc-color-body-bg: #151515;
+            --osc-color-body-bg-soft: #1f1f1f;
+            --osc-color-surface: #1f1f1f;
+            --osc-color-surface-alt: #151515;
+            --osc-color-surface-border: #3c3f42; /* $pf-color-black-600 */
+            --osc-color-text: #f5f5f5;
+            --osc-color-text-subtle: #d2d2d2;
+            --osc-color-muted: #b8bbbe; /* $pf-color-black-300 */
+            --osc-color-progress-bg: rgba(0, 102, 204, 0.22);
+            --osc-color-card-shadow: rgba(0, 0, 0, 0.4);
+            --osc-color-card-shadow-strong: rgba(0, 0, 0, 0.55);
         }
 
         header {
-            padding: 1.5rem 2rem;
-            background: #007bba;
+            padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
+            background: linear-gradient(115deg, var(--osc-color-header-start), var(--osc-color-header-end));
             color: #fff;
+            box-shadow: 0 20px 50px rgba(0, 59, 113, 0.25);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(2rem, 3vw, 2.75rem);
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .meta {
+            margin: 0.75rem 0 0;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.85);
         }
 
         main {
-            padding: 1.5rem 2rem 2rem;
+            padding: clamp(1.5rem, 3vw, 3rem);
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1.75rem;
         }
 
-        section {
-            margin-bottom: 2rem;
-            background: #fff;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
+        .report-card {
+            position: relative;
+            background: var(--osc-color-surface);
+            border-radius: var(--osc-border-radius-lg);
+            padding: 1.75rem;
+            box-shadow: 0 18px 40px var(--osc-color-card-shadow);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            z-index: 0;
         }
 
-        body.dark-mode section {
-            background: #1c1c1c;
-            box-shadow: 0 1px 4px rgba(255, 255, 255, 0.08);
+        .report-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: inherit;
+            border: 1px solid rgba(0, 102, 204, 0.06);
+            z-index: 1;
+        }
+
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 50px var(--osc-color-card-shadow-strong);
+        }
+
+        body.dark-mode .report-card {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .section-header::after {
+            content: "";
+            flex: 1 1 auto;
+            height: 3px;
+            margin-left: 1rem;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(0, 102, 204, 0.55), rgba(0, 149, 150, 0.4));
+            opacity: 0.7;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: clamp(1.25rem, 2vw, 1.6rem);
+            color: var(--osc-color-text);
         }
 
         .progress-card {
-            position: relative;
-            overflow: hidden;
+            background: radial-gradient(circle at top left, rgba(115, 188, 247, 0.35), transparent 55%), var(--osc-color-surface);
         }
 
         .progress {
             width: 100%;
-            height: 0.6rem;
-            background: rgba(0, 0, 0, 0.1);
+            height: 0.65rem;
+            background: var(--osc-color-progress-bg);
             border-radius: 999px;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1.1rem;
+            overflow: hidden;
         }
 
-        body.dark-mode .progress {
-            background: rgba(255, 255, 255, 0.15);
+        #progress-text {
+            margin: 0;
+            color: var(--osc-color-text-subtle);
+            font-weight: 500;
+            letter-spacing: 0.01em;
         }
 
         .progress-bar {
             height: 100%;
-            background: #00a1e0;
-            border-radius: 999px;
-            transition: width 0.3s ease;
+            width: 0;
+            background: linear-gradient(90deg, var(--osc-color-primary), var(--osc-color-primary-soft));
+            border-radius: inherit;
+            transition: width 0.4s ease;
         }
 
         .loading .loader {
             display: flex;
             align-items: center;
             gap: 1rem;
+            color: var(--osc-color-muted);
             font-size: 0.95rem;
-            opacity: 0.8;
+        }
+
+        .loading .loader p {
+            margin: 0;
+        }
+
+        .loading::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(120deg, rgba(0, 102, 204, 0.08), rgba(0, 149, 150, 0.04));
+            opacity: 0.55;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .spinner {
             width: 1.5rem;
             height: 1.5rem;
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-top-color: #00a1e0;
+            border: 3px solid rgba(0, 102, 204, 0.18);
+            border-top-color: var(--osc-color-primary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         body.dark-mode .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.25);
-            border-top-color: #4dd0ff;
+            border-color: rgba(115, 188, 247, 0.25);
+            border-top-color: var(--osc-color-primary-soft);
         }
 
-        h1 {
-            margin: 0;
-            font-size: 2rem;
-        }
-
-        h2 {
-            margin-top: 0;
-            font-size: 1.25rem;
-        }
-
-        pre {
+        .code-block {
             overflow-x: auto;
-            background: rgba(0, 0, 0, 0.05);
-            padding: 1rem;
-            border-radius: 0.25rem;
-            white-space: pre-wrap;
-        }
-
-        body.dark-mode pre {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .meta {
-            margin-top: 0.5rem;
+            background: var(--osc-color-surface-alt);
+            border-radius: var(--osc-border-radius-md);
+            padding: 1rem 1.25rem;
             font-size: 0.9rem;
-            opacity: 0.85;
+            font-family: "Red Hat Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            color: var(--osc-color-text);
+            border: 1px solid var(--osc-color-surface-border);
+        }
+
+        body.dark-mode .code-block {
+            background: rgba(0, 0, 0, 0.35);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .error {
-            padding: 1rem;
-            border-radius: 0.25rem;
-            background: #ffefef;
-            color: #a80000;
+            background: rgba(201, 25, 11, 0.12);
+            border-left: 4px solid var(--osc-color-accent-red);
+            border-radius: var(--osc-border-radius-md);
+            padding: 1rem 1.25rem;
+            color: #a11224;
+            font-weight: 500;
         }
 
         body.dark-mode .error {
-            background: rgba(168, 0, 0, 0.2);
-            color: #ff8080;
+            background: rgba(201, 25, 11, 0.2);
+            color: #ffb3b8;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 0 -0.25rem;
+            padding: 0 0.25rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            color: var(--osc-color-text);
+        }
+
+        thead tr {
+            background: linear-gradient(90deg, rgba(0, 102, 204, 0.12), rgba(0, 149, 150, 0.1));
         }
 
         th,
         td {
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 0.6rem;
-            text-align: left;
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        tbody tr:nth-child(odd) {
+            background: rgba(0, 0, 0, 0.015);
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 102, 204, 0.08);
+        }
+
+        body.dark-mode thead tr {
+            background: rgba(0, 102, 204, 0.28);
         }
 
         body.dark-mode th,
         body.dark-mode td {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-bottom-color: rgba(255, 255, 255, 0.08);
         }
 
-        th {
-            background: rgba(0, 0, 0, 0.05);
+        body.dark-mode tbody tr:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        body.dark-mode tbody tr:hover {
+            background: rgba(0, 149, 150, 0.25);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.1rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
             font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--osc-color-text-subtle);
         }
 
-        body.dark-mode th {
-            background: rgba(255, 255, 255, 0.08);
+        .status-success {
+            background: rgba(62, 134, 53, 0.14);
+            color: var(--osc-color-accent-green);
         }
 
-        .table-wrapper {
-            overflow-x: auto;
+        .status-warning {
+            background: rgba(244, 193, 69, 0.18);
+            color: var(--osc-color-accent-gold);
+        }
+
+        .status-danger {
+            background: rgba(201, 25, 11, 0.18);
+            color: var(--osc-color-accent-red);
+        }
+
+        .status-accent {
+            background: rgba(0, 149, 150, 0.18);
+            color: var(--osc-color-accent-cyan);
+        }
+
+        .status-neutral {
+            background: rgba(0, 102, 204, 0.14);
+            color: var(--osc-color-primary);
         }
 
         @keyframes spin {
@@ -511,17 +713,21 @@ foreach ($sectionDefinitions as $id => $definition) {
         <p class="meta">Report generated on <?php echo htmlspecialchars(date('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?></p>
     </header>
     <main>
-        <section class="progress-card">
-            <h2>Preparing Report</h2>
+        <section class="report-card progress-card">
+            <div class="section-header">
+                <h2>Preparing Report</h2>
+            </div>
             <div class="progress" aria-live="polite" aria-label="Report progress">
-                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                <div class="progress-bar" id="progress-bar" style="width: 0%" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
             <p id="progress-text">Starting data collection…</p>
         </section>
 
         <?php foreach ($sectionMeta as $meta): ?>
-            <section id="section-<?php echo htmlspecialchars($meta['id'], ENT_QUOTES, 'UTF-8'); ?>" class="loading">
-                <h2><?php echo htmlspecialchars($meta['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+            <section id="section-<?php echo htmlspecialchars($meta['id'], ENT_QUOTES, 'UTF-8'); ?>" class="report-card loading">
+                <div class="section-header">
+                    <h2><?php echo htmlspecialchars($meta['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                </div>
                 <div class="loader">
                     <div class="spinner" role="presentation"></div>
                     <p>Gathering data…</p>
@@ -548,6 +754,7 @@ foreach ($sectionDefinitions as $id => $definition) {
                 var percent = total === 0 ? 100 : Math.round((safeCompleted / total) * 100);
                 if (progressBar) {
                     progressBar.style.width = percent + '%';
+                    progressBar.setAttribute('aria-valuenow', String(percent));
                 }
                 if (progressText) {
                     progressText.textContent = message;
@@ -563,12 +770,16 @@ foreach ($sectionDefinitions as $id => $definition) {
                 placeholder.classList.remove('loading');
                 placeholder.innerHTML = '';
 
+                var header = document.createElement('div');
+                header.className = 'section-header';
                 var heading = document.createElement('h2');
                 heading.textContent = section.title;
-                placeholder.appendChild(heading);
+                header.appendChild(heading);
+                placeholder.appendChild(header);
 
                 var errorBox = document.createElement('div');
                 errorBox.className = 'error';
+                errorBox.setAttribute('role', 'alert');
                 errorBox.textContent = errorMessage;
                 placeholder.appendChild(errorBox);
             }
