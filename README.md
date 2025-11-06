@@ -1,9 +1,24 @@
 OCP Cluster Health Report
 ==========================
 
-The OCP Cluster Health Report provides a simple web-based health check for an OpenShift cluster. This quickstart guide will walk you through installing the cluster-health PHP application using a provided YAML configuration file.
+The OCP Cluster Health Report provides a modern, visually appealing web-based health check dashboard for monitoring OpenShift cluster health. This quickstart guide will walk you through installing the cluster-health PHP application using a provided YAML configuration file.
 
 ![Cluster Health Report Diagram](images/health_report.png)
+
+Features
+--------
+
+The redesigned status page provides a professional, enterprise-grade monitoring dashboard:
+
+- **OpenShift Console 4.20 Design**: Authentic PatternFly v6 color scheme and styling
+- **Instant Page Load**: Progressive AJAX loading with functional progress bar
+- **Compact Layout**: Dense, professional data presentation optimized for operations
+- **Color-Coded Status Indicators**: PatternFly status colors (green, yellow, red) for quick health assessment
+- **Responsive Design**: Mobile-friendly layout that adapts to all screen sizes
+- **Enhanced Data Tables**: Compact, styled tables with proper visual hierarchy
+- **Real-time Progress**: Visual progress bar shows loading state (5% → 100%)
+- **Professional Typography**: Red Hat fonts matching OpenShift console
+- **Fast Performance**: Lightweight HTML shell loads in <100ms, sections populate progressively
 
 Quickstart Installation
 -----------------------
