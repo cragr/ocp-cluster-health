@@ -1,75 +1,171 @@
-<?php
-// Report title and date/time
-echo '<h1>OpenShift Cluster Health Report</h1>';
-echo '<p>Report generated on: ' . date('Y-m-d H:i:s') . '</p>';
-echo '<hr>';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cluster Health Report</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
 
-// Check the version of OpenShift
-echo '<h2>Check the version of OpenShift</h2>';
-echo '<pre>' . shell_exec('oc get clusterversion') . '</pre>';
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Cluster Health Report</h1>
+            <div class="timestamp">
+                Report Generated at: <?php echo date('Y-m-d H:i:s'); ?>
+            </div>
+        </div>
 
-// Add the cluster version history as the second item
-echo '<h2>Cluster Version History</h2>';
+        <!-- Main Content -->
+        <div class="content">
 
-// Fetch cluster version information using the oc and jq command
-$cluster_version_output = shell_exec('oc get clusterversion version -o json | jq -r \'.status.history[] | "\(.version),\(.state),\(.startedTime),\(.completionTime)"\'');
+            <!-- Cluster Status -->
+            <div class="section loading" id="section-cluster-status" data-section="cluster-status">
+                <h2>Cluster Status</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-if ($cluster_version_output) {
-    // Wrap output in <pre> to preserve formatting
-    echo "<pre>";
+            <!-- Node Status -->
+            <div class="section loading" id="section-nodes" data-section="nodes">
+                <h2>Node Status</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-    // Print the table header
-    echo str_pad("VERSION", 12) . str_pad("STATE", 12) . str_pad("STARTED TIME", 30) . str_pad("COMPLETED TIME", 30) . "\n";
-    echo str_repeat("-", 84) . "\n";
+            <!-- Node Utilization -->
+            <div class="section loading" id="section-node-utilization" data-section="node-utilization">
+                <h2>Node Utilization</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-    // Split the output into rows and format the data into columns
-    $rows = explode("\n", trim($cluster_version_output));
-    foreach ($rows as $row) {
-        if (!empty($row)) {
-            $fields = explode(",", $row);
-            echo str_pad($fields[0], 12); // Version
-            echo str_pad($fields[1], 12); // State
-            echo str_pad($fields[2], 30); // Started Time
-            echo str_pad($fields[3], 30); // Completed Time
-            echo "\n";
-        }
-    }
+            <!-- Cluster Operators -->
+            <div class="section loading" id="section-cluster-operators" data-section="cluster-operators">
+                <h2>Cluster Operators</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-    echo "</pre>";
-} else {
-    echo "Failed to fetch cluster version information.\n";
-}
+            <!-- Monitoring Stack -->
+            <div class="section loading" id="section-monitoring-stack" data-section="monitoring-stack">
+                <h2>Monitoring Stack</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-echo '<h2>Check the status of OpenShift nodes</h2>';
-echo '<pre>' . shell_exec('oc get nodes') . '</pre>';
+            <!-- Upgrade History -->
+            <div class="section loading" id="section-upgrade-history" data-section="upgrade-history">
+                <h2>Upgrade History</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-echo '<h2>Check the status of OpenShift cluster operators (co)</h2>';
-echo '<pre>' . shell_exec('oc get co') . '</pre>';
+            <!-- Cluster Events -->
+            <div class="section loading" id="section-cluster-events" data-section="cluster-events">
+                <h2>Cluster Events</h2>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
+            </div>
 
-echo '<h2>Node Resource Usage</h2>';
-echo '<pre>' . shell_exec('oc adm top nodes') . '</pre>';
+        </div>
 
-echo '<h2>Ingress Pod Status</h2>';
-echo '<pre>' . shell_exec('oc get pods -n openshift-ingress') . '</pre>';
+        <!-- Footer -->
+        <div class="footer">
+            Powered by OpenShift CLI | Auto-refresh recommended
+        </div>
+    </div>
 
-echo '<h2>Ingress Pod Resource Usage</h2>';
-echo '<pre>' . shell_exec('oc adm top pods -n openshift-ingress') . '</pre>';
+    <script>
+        // Progressive section loading with progress bar
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.getElementById('progressBar');
+            const sections = document.querySelectorAll('.section[data-section]');
+            const totalSections = sections.length;
+            let loadedSections = 0;
 
-echo '<h2>Monitoring Pod Status</h2>';
-echo '<pre>' . shell_exec('oc get pods -n openshift-monitoring') . '</pre>';
+            // Initialize progress
+            updateProgress(5);
 
-// Fetch critical events
-$critical_events_output = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
+            // Load sections sequentially
+            async function loadAllSections() {
+                updateProgress(10);
 
-// Display the Critical Events section
-echo '<h2>Critical Events</h2>';
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
+                    const sectionName = section.getAttribute('data-section');
 
-// Check if shell_exec returned null or an empty string
-if ($critical_events_output === null || trim($critical_events_output) === '') {
-    // If no critical events are found or the command failed, display a message
-    echo '<pre>No critical events found.</pre>';
-} else {
-    // If critical events are found, display the output
-    echo '<pre>' . $critical_events_output . '</pre>';
-}
-?>
+                    try {
+                        await loadSection(section, sectionName);
+                        loadedSections++;
+                        updateProgress(10 + (loadedSections / totalSections) * 85);
+                    } catch (error) {
+                        console.error(`Failed to load section ${sectionName}:`, error);
+                        const contentDiv = section.querySelector('.section-content');
+                        contentDiv.innerHTML = '<div class="alert alert-danger">Failed to load data</div>';
+                        section.classList.remove('loading');
+                        loadedSections++;
+                        updateProgress(10 + (loadedSections / totalSections) * 85);
+                    }
+
+                    // Small delay between sections for visual effect
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Complete the progress bar
+                updateProgress(100);
+            }
+
+            // Load individual section data
+            async function loadSection(sectionElement, sectionName) {
+                const response = await fetch(`data.php?section=${sectionName}`);
+                const data = await response.json();
+
+                const contentDiv = sectionElement.querySelector('.section-content');
+
+                if (data.success) {
+                    contentDiv.innerHTML = data.html;
+                } else {
+                    contentDiv.innerHTML = `<div class="alert alert-danger">${data.error || 'Failed to load'}</div>`;
+                }
+
+                sectionElement.classList.remove('loading');
+            }
+
+            // Update progress bar width
+            function updateProgress(percentage) {
+                progressBar.style.width = percentage + '%';
+
+                if (percentage >= 100) {
+                    setTimeout(() => {
+                        progressBar.classList.add('complete');
+                    }, 300);
+                }
+            }
+
+            // Start loading sections
+            loadAllSections();
+
+            // Add staggered animation delays
+            sections.forEach((section, index) => {
+                section.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Auto-refresh functionality (optional - uncomment to enable)
+        // setTimeout(() => {
+        //     location.reload();
+        // }, 300000); // Refresh every 5 minutes
+    </script>
+</body>
+</html>
