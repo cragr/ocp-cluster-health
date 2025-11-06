@@ -107,6 +107,7 @@ body {
     box-shadow: var(--pf-shadow-md);
     position: relative;
     overflow: hidden;
+    text-align: center;
 }
 
 .header::before {
