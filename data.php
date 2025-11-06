@@ -28,6 +28,45 @@ function getStatusBadge($status) {
     return "<span class='status-badge $class'>" . htmlspecialchars($status) . "</span>";
 }
 
+// Helper function for cluster operator status badges
+function getOperatorStatusBadge($value, $column) {
+    $value = strtolower(trim($value));
+
+    // Available: True = Green, False = Red
+    if ($column === 'available') {
+        $class = ($value === 'true') ? 'status-available' : 'status-failed';
+    }
+    // Progressing: False = Green, True = Yellow
+    elseif ($column === 'progressing') {
+        $class = ($value === 'false') ? 'status-ready' : 'status-progressing';
+    }
+    // Degraded: False = Green, True = Red
+    elseif ($column === 'degraded') {
+        $class = ($value === 'false') ? 'status-ready' : 'status-failed';
+    }
+    else {
+        $class = 'status-badge';
+    }
+
+    return "<span class='status-badge $class'>" . htmlspecialchars($value) . "</span>";
+}
+
+// Helper function for event type badges
+function getEventTypeBadge($type) {
+    $type = trim($type);
+    $typeLower = strtolower($type);
+
+    if ($typeLower === 'warning') {
+        $class = 'status-progressing'; // Yellow
+    } elseif ($typeLower === 'critical') {
+        $class = 'status-failed'; // Red
+    } else {
+        $class = 'status-badge';
+    }
+
+    return "<span class='status-badge $class'>" . htmlspecialchars($type) . "</span>";
+}
+
 // Helper function to create a table from CLI output
 function createTable($output, $hasStatus = false) {
     if (empty(trim($output))) {
@@ -81,13 +120,13 @@ $response = [
 
 try {
     switch ($section) {
-        case 'version':
+        case 'cluster-status':
             $output = shell_exec('oc get clusterversion');
             $response['html'] = createTable($output, true);
             $response['success'] = true;
             break;
 
-        case 'version-history':
+        case 'upgrade-history':
             $cluster_version_output = shell_exec('oc get clusterversion version -o json | jq -r \'.status.history[] | "\(.version),\(.state),\(.startedTime),\(.completionTime)"\'');
 
             if ($cluster_version_output) {
@@ -125,7 +164,7 @@ try {
             $response['success'] = true;
             break;
 
-        case 'operators':
+        case 'cluster-operators':
             $co_output = shell_exec('oc get co');
             if (!empty(trim($co_output))) {
                 $lines = explode("\n", trim($co_output));
@@ -143,9 +182,9 @@ try {
                         $html .= "<tr>";
                         $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[1] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[2] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[3] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[4] ?? '') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[2] ?? '', 'available') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[3] ?? '', 'progressing') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[4] ?? '', 'degraded') . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[5] ?? '') . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[6] ?? '') . "</td>";
                         $html .= "</tr>";
@@ -160,38 +199,59 @@ try {
             $response['success'] = true;
             break;
 
-        case 'node-resources':
+        case 'node-utilization':
             $output = shell_exec('oc adm top nodes');
             $response['html'] = createTable($output);
             $response['success'] = true;
             break;
 
-        case 'ingress-pods':
-            $output = shell_exec('oc get pods -n openshift-ingress');
-            $response['html'] = createTable($output, true);
-            $response['success'] = true;
-            break;
-
-        case 'ingress-resources':
-            $output = shell_exec('oc adm top pods -n openshift-ingress');
-            $response['html'] = createTable($output);
-            $response['success'] = true;
-            break;
-
-        case 'monitoring-pods':
+        case 'monitoring-stack':
             $output = shell_exec('oc get pods -n openshift-monitoring');
             $response['html'] = createTable($output, true);
             $response['success'] = true;
             break;
 
-        case 'critical-events':
-            $critical_events = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
+        case 'cluster-events':
+            $cluster_events = shell_exec("oc get events --all-namespaces | grep -E 'Warning|Critical'");
 
-            if ($critical_events === null || trim($critical_events) === '') {
-                $response['html'] = "<div class='alert alert-success'>No critical events found.</div>";
+            if ($cluster_events === null || trim($cluster_events) === '') {
+                $response['html'] = "<div class='alert alert-success'>No warning or critical events found.</div>";
             } else {
-                $response['html'] = "<div class='alert alert-danger'>Critical events detected</div>";
-                $response['html'] .= "<pre class='raw-output'>" . htmlspecialchars($critical_events) . "</pre>";
+                $lines = explode("\n", trim($cluster_events));
+
+                // Get header from full output (without grep)
+                $full_output = shell_exec("oc get events --all-namespaces | head -1");
+                $header_line = trim($full_output);
+
+                if (!empty($lines)) {
+                    $html = "<table class='data-table'>";
+                    $html .= "<thead><tr>";
+                    $html .= "<th>Namespace</th><th>Last Seen</th><th>Type</th><th>Reason</th><th>Object</th><th>Message</th>";
+                    $html .= "</tr></thead><tbody>";
+
+                    foreach ($lines as $line) {
+                        if (empty(trim($line))) continue;
+
+                        // Parse event line - split by whitespace, but limit to 6 parts to keep message together
+                        $parts = preg_split('/\s+/', trim($line), 6);
+
+                        if (count($parts) >= 6) {
+                            $html .= "<tr>";
+                            $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>"; // Namespace
+                            $html .= "<td>" . htmlspecialchars($parts[1]) . "</td>"; // Last Seen
+                            $html .= "<td>" . getEventTypeBadge($parts[2]) . "</td>"; // Type (color-coded)
+                            $html .= "<td>" . htmlspecialchars($parts[3]) . "</td>"; // Reason
+                            $html .= "<td>" . htmlspecialchars($parts[4]) . "</td>"; // Object
+                            $html .= "<td>" . htmlspecialchars($parts[5]) . "</td>"; // Message
+                            $html .= "</tr>";
+                        }
+                    }
+
+                    $html .= "</tbody></table>";
+                    $response['html'] = $html;
+                } else {
+                    $response['html'] = "<div class='alert alert-success'>No warning or critical events found.</div>";
+                }
             }
             $response['success'] = true;
             break;

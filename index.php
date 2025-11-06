@@ -22,17 +22,9 @@
         <!-- Main Content -->
         <div class="content">
 
-            <!-- OpenShift Version -->
-            <div class="section loading" id="section-version" data-section="version">
-                <h2>OpenShift Version</h2>
-                <div class="section-content">
-                    <div class="alert alert-info">Loading...</div>
-                </div>
-            </div>
-
-            <!-- Cluster Version History -->
-            <div class="section loading" id="section-version-history" data-section="version-history">
-                <h2>Cluster Version History</h2>
+            <!-- Cluster Status -->
+            <div class="section loading" id="section-cluster-status" data-section="cluster-status">
+                <h2>Cluster Status</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
@@ -46,49 +38,41 @@
                 </div>
             </div>
 
-            <!-- Cluster Operators Status -->
-            <div class="section loading" id="section-operators" data-section="operators">
-                <h2>Cluster Operators Status</h2>
+            <!-- Node Utilization -->
+            <div class="section loading" id="section-node-utilization" data-section="node-utilization">
+                <h2>Node Utilization</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
             </div>
 
-            <!-- Node Resource Usage -->
-            <div class="section loading" id="section-node-resources" data-section="node-resources">
-                <h2>Node Resource Usage</h2>
+            <!-- Cluster Operators -->
+            <div class="section loading" id="section-cluster-operators" data-section="cluster-operators">
+                <h2>Cluster Operators</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
             </div>
 
-            <!-- Ingress Pod Status -->
-            <div class="section loading" id="section-ingress-pods" data-section="ingress-pods">
-                <h2>Ingress Pod Status</h2>
+            <!-- Monitoring Stack -->
+            <div class="section loading" id="section-monitoring-stack" data-section="monitoring-stack">
+                <h2>Monitoring Stack</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
             </div>
 
-            <!-- Ingress Pod Resource Usage -->
-            <div class="section loading" id="section-ingress-resources" data-section="ingress-resources">
-                <h2>Ingress Pod Resource Usage</h2>
+            <!-- Upgrade History -->
+            <div class="section loading" id="section-upgrade-history" data-section="upgrade-history">
+                <h2>Upgrade History</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
             </div>
 
-            <!-- Monitoring Pod Status -->
-            <div class="section loading" id="section-monitoring-pods" data-section="monitoring-pods">
-                <h2>Monitoring Pod Status</h2>
-                <div class="section-content">
-                    <div class="alert alert-info">Loading...</div>
-                </div>
-            </div>
-
-            <!-- Critical Events -->
-            <div class="section loading" id="section-critical-events" data-section="critical-events">
-                <h2>Critical Events</h2>
+            <!-- Cluster Events -->
+            <div class="section loading" id="section-cluster-events" data-section="cluster-events">
+                <h2>Cluster Events</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
