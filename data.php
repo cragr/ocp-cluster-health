@@ -51,6 +51,22 @@ function getOperatorStatusBadge($value, $column) {
     return "<span class='status-badge $class'>" . htmlspecialchars($value) . "</span>";
 }
 
+// Helper function for event type badges
+function getEventTypeBadge($type) {
+    $type = trim($type);
+    $typeLower = strtolower($type);
+
+    if ($typeLower === 'warning') {
+        $class = 'status-progressing'; // Yellow
+    } elseif ($typeLower === 'critical') {
+        $class = 'status-failed'; // Red
+    } else {
+        $class = 'status-badge';
+    }
+
+    return "<span class='status-badge $class'>" . htmlspecialchars($type) . "</span>";
+}
+
 // Helper function to create a table from CLI output
 function createTable($output, $hasStatus = false) {
     if (empty(trim($output))) {
@@ -110,7 +126,7 @@ try {
             $response['success'] = true;
             break;
 
-        case 'version-history':
+        case 'upgrade-history':
             $cluster_version_output = shell_exec('oc get clusterversion version -o json | jq -r \'.status.history[] | "\(.version),\(.state),\(.startedTime),\(.completionTime)"\'');
 
             if ($cluster_version_output) {
@@ -201,8 +217,41 @@ try {
             if ($cluster_events === null || trim($cluster_events) === '') {
                 $response['html'] = "<div class='alert alert-success'>No warning or critical events found.</div>";
             } else {
-                $response['html'] = "<div class='alert alert-warning'>Warning or critical events detected</div>";
-                $response['html'] .= "<pre class='raw-output'>" . htmlspecialchars($cluster_events) . "</pre>";
+                $lines = explode("\n", trim($cluster_events));
+
+                // Get header from full output (without grep)
+                $full_output = shell_exec("oc get events --all-namespaces | head -1");
+                $header_line = trim($full_output);
+
+                if (!empty($lines)) {
+                    $html = "<table class='data-table'>";
+                    $html .= "<thead><tr>";
+                    $html .= "<th>Namespace</th><th>Last Seen</th><th>Type</th><th>Reason</th><th>Object</th><th>Message</th>";
+                    $html .= "</tr></thead><tbody>";
+
+                    foreach ($lines as $line) {
+                        if (empty(trim($line))) continue;
+
+                        // Parse event line - split by whitespace, but limit to 6 parts to keep message together
+                        $parts = preg_split('/\s+/', trim($line), 6);
+
+                        if (count($parts) >= 6) {
+                            $html .= "<tr>";
+                            $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>"; // Namespace
+                            $html .= "<td>" . htmlspecialchars($parts[1]) . "</td>"; // Last Seen
+                            $html .= "<td>" . getEventTypeBadge($parts[2]) . "</td>"; // Type (color-coded)
+                            $html .= "<td>" . htmlspecialchars($parts[3]) . "</td>"; // Reason
+                            $html .= "<td>" . htmlspecialchars($parts[4]) . "</td>"; // Object
+                            $html .= "<td>" . htmlspecialchars($parts[5]) . "</td>"; // Message
+                            $html .= "</tr>";
+                        }
+                    }
+
+                    $html .= "</tbody></table>";
+                    $response['html'] = $html;
+                } else {
+                    $response['html'] = "<div class='alert alert-success'>No warning or critical events found.</div>";
+                }
             }
             $response['success'] = true;
             break;

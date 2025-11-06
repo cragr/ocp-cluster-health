@@ -62,9 +62,9 @@
                 </div>
             </div>
 
-            <!-- Cluster Version History -->
-            <div class="section loading" id="section-version-history" data-section="version-history">
-                <h2>Cluster Version History</h2>
+            <!-- Upgrade History -->
+            <div class="section loading" id="section-upgrade-history" data-section="upgrade-history">
+                <h2>Upgrade History</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>
