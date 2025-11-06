@@ -81,7 +81,7 @@ $response = [
 
 try {
     switch ($section) {
-        case 'version':
+        case 'cluster-status':
             $output = shell_exec('oc get clusterversion');
             $response['html'] = createTable($output, true);
             $response['success'] = true;
@@ -125,7 +125,7 @@ try {
             $response['success'] = true;
             break;
 
-        case 'operators':
+        case 'cluster-operators':
             $co_output = shell_exec('oc get co');
             if (!empty(trim($co_output))) {
                 $lines = explode("\n", trim($co_output));
@@ -160,25 +160,13 @@ try {
             $response['success'] = true;
             break;
 
-        case 'node-resources':
+        case 'node-utilization':
             $output = shell_exec('oc adm top nodes');
             $response['html'] = createTable($output);
             $response['success'] = true;
             break;
 
-        case 'ingress-pods':
-            $output = shell_exec('oc get pods -n openshift-ingress');
-            $response['html'] = createTable($output, true);
-            $response['success'] = true;
-            break;
-
-        case 'ingress-resources':
-            $output = shell_exec('oc adm top pods -n openshift-ingress');
-            $response['html'] = createTable($output);
-            $response['success'] = true;
-            break;
-
-        case 'monitoring-pods':
+        case 'monitoring-stack':
             $output = shell_exec('oc get pods -n openshift-monitoring');
             $response['html'] = createTable($output, true);
             $response['success'] = true;
