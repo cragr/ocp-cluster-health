@@ -188,9 +188,9 @@ try {
             $critical_events = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
 
             if ($critical_events === null || trim($critical_events) === '') {
-                $response['html'] = "<div class='alert alert-success'>✓ No critical events found.</div>";
+                $response['html'] = "<div class='alert alert-success'>No critical events found.</div>";
             } else {
-                $response['html'] = "<div class='alert alert-danger'>⚠ Critical events detected!</div>";
+                $response['html'] = "<div class='alert alert-danger'>Critical events detected</div>";
                 $response['html'] .= "<pre class='raw-output'>" . htmlspecialchars($critical_events) . "</pre>";
             }
             $response['success'] = true;
