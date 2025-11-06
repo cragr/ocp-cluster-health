@@ -82,7 +82,7 @@
 
         <!-- Footer -->
         <div class="footer">
-            Powered by OpenShift CLI | Auto-refresh recommended
+            <a href="https://github.com/cragr/ocp-cluster-health" target="_blank">GitHub Repository | cragr/ocp-cluster-health</a>
         </div>
     </div>
 
