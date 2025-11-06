@@ -67,6 +67,30 @@ function getEventTypeBadge($type) {
     return "<span class='status-badge $class'>" . htmlspecialchars($type) . "</span>";
 }
 
+// Helper function for pod status badges
+function getPodStatusBadge($status) {
+    $status = trim($status);
+    $statusLower = strtolower($status);
+
+    // Green: Running and Completed
+    if ($statusLower === 'running' || $statusLower === 'completed') {
+        $class = 'status-ready';
+    }
+    // Yellow: Pending
+    elseif ($statusLower === 'pending') {
+        $class = 'status-progressing';
+    }
+    // Red: Failed, CrashLoopBackOff, Error
+    elseif ($statusLower === 'failed' || $statusLower === 'crashloopbackoff' || $statusLower === 'error') {
+        $class = 'status-failed';
+    }
+    else {
+        $class = 'status-badge';
+    }
+
+    return "<span class='status-badge $class'>" . htmlspecialchars($status) . "</span>";
+}
+
 // Helper function to create a table from CLI output
 function createTable($output, $hasStatus = false) {
     if (empty(trim($output))) {
@@ -121,8 +145,36 @@ $response = [
 try {
     switch ($section) {
         case 'cluster-status':
-            $output = shell_exec('oc get clusterversion');
-            $response['html'] = createTable($output, true);
+            $cv_output = shell_exec('oc get clusterversion');
+            if (!empty(trim($cv_output))) {
+                $lines = explode("\n", trim($cv_output));
+                $header = array_shift($lines);
+
+                $html = "<table class='data-table'>";
+                $html .= "<thead><tr><th>Name</th><th>Version</th><th>Available</th><th>Progressing</th><th>Since</th><th>Status</th></tr></thead>";
+                $html .= "<tbody>";
+
+                foreach ($lines as $line) {
+                    if (empty(trim($line))) continue;
+
+                    $parts = preg_split('/\s+/', trim($line), 6);
+                    if (count($parts) >= 4) {
+                        $html .= "<tr>";
+                        $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[1] ?? '') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[2] ?? '', 'available') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[3] ?? '', 'progressing') . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[4] ?? '') . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[5] ?? '') . "</td>";
+                        $html .= "</tr>";
+                    }
+                }
+
+                $html .= "</tbody></table>";
+                $response['html'] = $html;
+            } else {
+                $response['html'] = "<div class='alert alert-info'>No cluster version data available</div>";
+            }
             $response['success'] = true;
             break;
 
@@ -207,7 +259,36 @@ try {
 
         case 'monitoring-stack':
             $output = shell_exec('oc get pods -n openshift-monitoring');
-            $response['html'] = createTable($output, true);
+            if (!empty(trim($output))) {
+                $lines = explode("\n", trim($output));
+                $header = array_shift($lines);
+
+                $html = "<table class='data-table'>";
+                $html .= "<thead><tr><th>Name</th><th>Ready</th><th>Status</th><th>Restarts</th><th>Age</th></tr></thead>";
+                $html .= "<tbody>";
+
+                foreach ($lines as $line) {
+                    if (empty(trim($line))) continue;
+
+                    // Parse pod line - split by whitespace, limit to 5 parts
+                    $parts = preg_split('/\s+/', trim($line), 5);
+
+                    if (count($parts) >= 4) {
+                        $html .= "<tr>";
+                        $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>"; // Name
+                        $html .= "<td>" . htmlspecialchars($parts[1]) . "</td>"; // Ready
+                        $html .= "<td>" . getPodStatusBadge($parts[2]) . "</td>"; // Status (color-coded)
+                        $html .= "<td>" . htmlspecialchars($parts[3]) . "</td>"; // Restarts
+                        $html .= "<td>" . htmlspecialchars($parts[4] ?? '') . "</td>"; // Age
+                        $html .= "</tr>";
+                    }
+                }
+
+                $html .= "</tbody></table>";
+                $response['html'] = $html;
+            } else {
+                $response['html'] = "<div class='alert alert-info'>No monitoring stack data available</div>";
+            }
             $response['success'] = true;
             break;
 
