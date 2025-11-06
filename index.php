@@ -90,6 +90,9 @@ function createResourceMeter($value) {
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Loading Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -249,5 +252,61 @@ function createResourceMeter($value) {
             Powered by OpenShift CLI | Auto-refresh recommended
         </div>
     </div>
+
+    <script>
+        // Progress bar management
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.getElementById('progressBar');
+            const sections = document.querySelectorAll('.section');
+            const totalSections = sections.length;
+            let loadedSections = 0;
+
+            // Initialize progress
+            updateProgress(10);
+
+            // Create an observer to track when sections come into view
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.classList.contains('loaded')) {
+                        entry.target.classList.add('loaded');
+                        loadedSections++;
+                        updateProgress(10 + (loadedSections / totalSections) * 85);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            // Observe all sections
+            sections.forEach((section, index) => {
+                section.style.animationDelay = `${index * 0.1}s`;
+                observer.observe(section);
+            });
+
+            // Update progress bar width
+            function updateProgress(percentage) {
+                progressBar.style.width = percentage + '%';
+
+                if (percentage >= 95) {
+                    setTimeout(() => {
+                        progressBar.style.width = '100%';
+                        setTimeout(() => {
+                            progressBar.classList.add('complete');
+                        }, 300);
+                    }, 200);
+                }
+            }
+
+            // Mark page as fully loaded
+            window.addEventListener('load', function() {
+                updateProgress(100);
+            });
+        });
+
+        // Auto-refresh functionality (optional - uncomment to enable)
+        // setTimeout(() => {
+        //     location.reload();
+        // }, 300000); // Refresh every 5 minutes
+    </script>
 </body>
 </html>

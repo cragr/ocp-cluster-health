@@ -1,16 +1,34 @@
 /* Modern OpenShift Cluster Health Report Styles */
+/* Colors based on OpenShift Console and PatternFly Design System */
 
 :root {
-    --primary-color: #0066cc;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #17a2b8;
-    --light-bg: #f8f9fa;
-    --dark-text: #212529;
-    --border-color: #dee2e6;
+    /* OpenShift/PatternFly Brand Colors */
+    --primary-color: #06c;
+    --brand-red: #EE0000;
+    --brand-blue: #0066cc;
+
+    /* Status Colors from OpenShift Console */
+    --success-color: #3e8635;
+    --warning-color: #F0AB00;
+    --danger-color: #EE0000;
+    --info-color: #2b9af3;
+
+    /* Resource Colors from OpenShift Console */
+    --color-pod: #009596;
+    --color-node: #8476d1;
+    --color-container: #2b9af3;
+    --color-application: #3e8635;
+    --color-service: #6ca100;
+
+    /* Neutral Colors */
+    --light-bg: #f5f5f5;
+    --dark-text: #151515;
+    --border-color: #d2d2d2;
     --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
     --hover-shadow: 0 4px 16px rgba(0,0,0,0.15);
+
+    /* Loading Progress */
+    --progress-height: 4px;
 }
 
 * {
@@ -20,8 +38,8 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'RedHatDisplay', 'Overpass', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--color-node) 100%);
     min-height: 100vh;
     padding: 20px;
     color: var(--dark-text);
@@ -36,9 +54,27 @@ body {
     overflow: hidden;
 }
 
+/* Loading Progress Bar */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: var(--progress-height);
+    background: linear-gradient(90deg, var(--brand-red), var(--warning-color), var(--success-color));
+    transition: width 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 2px 4px rgba(238, 0, 0, 0.3);
+}
+
+.progress-bar.complete {
+    opacity: 0;
+    transition: opacity 0.5s ease 0.3s;
+}
+
 /* Header Styles */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--color-node) 100%);
     color: white;
     padding: 40px;
     text-align: center;
@@ -52,7 +88,7 @@ body {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #28a745, #17a2b8, #ffc107);
+    background: linear-gradient(90deg, var(--brand-red), var(--warning-color), var(--success-color));
 }
 
 .header h1 {
@@ -89,11 +125,44 @@ body {
     padding: 25px;
     transition: all 0.3s ease;
     border-left: 4px solid var(--primary-color);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .section:hover {
     box-shadow: var(--hover-shadow);
     transform: translateY(-2px);
+}
+
+.section.loading {
+    min-height: 150px;
+    position: relative;
+    overflow: hidden;
+}
+
+.section.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    to {
+        left: 100%;
+    }
 }
 
 .section h2 {
@@ -126,23 +195,26 @@ body {
 .status-running,
 .status-completed,
 .status-true {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: rgba(62, 134, 53, 0.15);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
 }
 
 .status-notready,
 .status-degraded,
 .status-progressing,
 .status-false {
-    background-color: #fff3cd;
-    color: #856404;
+    background-color: rgba(240, 171, 0, 0.15);
+    color: #8f6d00;
+    border: 1px solid var(--warning-color);
 }
 
 .status-failed,
 .status-error,
 .status-critical {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: rgba(238, 0, 0, 0.15);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
 }
 
 /* Table Styles */
@@ -156,7 +228,7 @@ body {
 }
 
 .data-table thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--color-node) 100%);
     color: white;
 }
 
@@ -263,26 +335,26 @@ body {
 }
 
 .alert-info {
-    background-color: #d1ecf1;
+    background-color: rgba(43, 154, 243, 0.1);
     color: #0c5460;
     border-left: 4px solid var(--info-color);
 }
 
 .alert-success {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: rgba(62, 134, 53, 0.1);
+    color: var(--success-color);
     border-left: 4px solid var(--success-color);
 }
 
 .alert-warning {
-    background-color: #fff3cd;
-    color: #856404;
+    background-color: rgba(240, 171, 0, 0.1);
+    color: #8f6d00;
     border-left: 4px solid var(--warning-color);
 }
 
 .alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: rgba(238, 0, 0, 0.1);
+    color: var(--danger-color);
     border-left: 4px solid var(--danger-color);
 }
 
@@ -308,15 +380,15 @@ body {
 }
 
 .resource-meter-fill.low {
-    background: linear-gradient(90deg, #28a745, #20c997);
+    background: linear-gradient(90deg, var(--success-color), var(--color-service));
 }
 
 .resource-meter-fill.medium {
-    background: linear-gradient(90deg, #ffc107, #fd7e14);
+    background: linear-gradient(90deg, var(--warning-color), #ec7a08);
 }
 
 .resource-meter-fill.high {
-    background: linear-gradient(90deg, #dc3545, #bd2130);
+    background: linear-gradient(90deg, var(--danger-color), #a30000);
 }
 
 /* Responsive Design */
