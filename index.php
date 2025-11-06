@@ -70,9 +70,9 @@
                 </div>
             </div>
 
-            <!-- Critical Events -->
-            <div class="section loading" id="section-critical-events" data-section="critical-events">
-                <h2>Critical Events</h2>
+            <!-- Cluster Events -->
+            <div class="section loading" id="section-cluster-events" data-section="cluster-events">
+                <h2>Cluster Events</h2>
                 <div class="section-content">
                     <div class="alert alert-info">Loading...</div>
                 </div>

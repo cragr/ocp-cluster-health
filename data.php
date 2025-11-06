@@ -195,14 +195,14 @@ try {
             $response['success'] = true;
             break;
 
-        case 'critical-events':
-            $critical_events = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
+        case 'cluster-events':
+            $cluster_events = shell_exec("oc get events --all-namespaces | grep -E 'Warning|Critical'");
 
-            if ($critical_events === null || trim($critical_events) === '') {
-                $response['html'] = "<div class='alert alert-success'>No critical events found.</div>";
+            if ($cluster_events === null || trim($cluster_events) === '') {
+                $response['html'] = "<div class='alert alert-success'>No warning or critical events found.</div>";
             } else {
-                $response['html'] = "<div class='alert alert-danger'>Critical events detected</div>";
-                $response['html'] .= "<pre class='raw-output'>" . htmlspecialchars($critical_events) . "</pre>";
+                $response['html'] = "<div class='alert alert-warning'>Warning or critical events detected</div>";
+                $response['html'] .= "<pre class='raw-output'>" . htmlspecialchars($cluster_events) . "</pre>";
             }
             $response['success'] = true;
             break;
