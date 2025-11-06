@@ -385,29 +385,26 @@ foreach ($sectionDefinitions as $id => $definition) {
         :root {
             color-scheme: light dark;
             --osc-font-family: "Red Hat Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            --osc-line-height: 1.6;
-            --osc-color-body-bg: #f5f5f5; /* $pf-color-black-100 */
-            --osc-color-body-bg-soft: #f0f0f0; /* $pf-color-black-150 */
+            --osc-line-height: 1.55;
+            --osc-color-body-bg: #f0f0f0; /* pf-v5-theme--color--bg-subtle */
             --osc-color-surface: #ffffff;
-            --osc-color-surface-alt: #fdfdfd;
-            --osc-color-surface-border: #d2d2d2; /* $pf-color-black-200 */
-            --osc-color-text: #151515; /* $pf-color-black-900 */
-            --osc-color-text-subtle: #4f5255; /* $pf-color-black-500 */
-            --osc-color-muted: #6a6e73; /* $pf-color-black-400 */
-            --osc-color-header-start: #004b95; /* $pf-color-blue-600 */
-            --osc-color-header-end: #0066cc; /* --pf-global--primary-color--100 */
+            --osc-color-panel-border: #d2d2d2;
+            --osc-color-border-subtle: #e0e0e0;
+            --osc-color-surface-subtle: #f7f7f7;
+            --osc-color-text: #151515;
+            --osc-color-text-subtle: #4f5255;
+            --osc-color-muted: #6a6e73;
+            --osc-color-header-top: #002f5d;
+            --osc-color-header-bottom: #004b95;
             --osc-color-primary: #0066cc;
-            --osc-color-primary-soft: #73bcf7; /* $pf-color-blue-200 */
-            --osc-color-primary-muted: #bee1f4; /* $pf-color-blue-100 */
-            --osc-color-progress-bg: #def3ff; /* $pf-color-blue-50 */
-            --osc-color-accent-cyan: #009596; /* $pf-color-cyan-300 */
-            --osc-color-accent-gold: #f4c145; /* $pf-color-gold-400 */
-            --osc-color-accent-green: #3e8635; /* $pf-color-green-500 */
-            --osc-color-accent-red: #c9190b; /* $pf-color-red-100 */
-            --osc-color-card-shadow: rgba(3, 3, 3, 0.12);
-            --osc-color-card-shadow-strong: rgba(3, 3, 3, 0.18);
-            --osc-border-radius-lg: 18px;
-            --osc-border-radius-md: 12px;
+            --osc-color-primary-strong: #004080;
+            --osc-color-progress-bg: #dce9f9;
+            --osc-color-success: #3e8635;
+            --osc-color-warning: #f0ab00;
+            --osc-color-danger: #c9190b;
+            --osc-color-accent: #009596;
+            --osc-border-radius: 12px;
+            --osc-border-radius-sm: 8px;
             line-height: var(--osc-line-height);
             font-family: var(--osc-font-family);
         }
@@ -415,111 +412,109 @@ foreach ($sectionDefinitions as $id => $definition) {
         body {
             margin: 0;
             min-height: 100vh;
-            background: linear-gradient(180deg, var(--osc-color-body-bg) 0%, var(--osc-color-body-bg-soft) 45%, var(--osc-color-body-bg) 100%);
+            background: linear-gradient(180deg, rgba(0, 47, 93, 0.05) 0%, rgba(0, 75, 149, 0.04) 22%, var(--osc-color-body-bg) 100%);
             color: var(--osc-color-text);
             font-family: var(--osc-font-family);
         }
 
         body.dark-mode {
-            --osc-color-body-bg: #151515;
-            --osc-color-body-bg-soft: #1f1f1f;
-            --osc-color-surface: #1f1f1f;
-            --osc-color-surface-alt: #151515;
-            --osc-color-surface-border: #3c3f42; /* $pf-color-black-600 */
+            --osc-color-body-bg: #1f1f1f;
+            --osc-color-surface: #151515;
+            --osc-color-panel-border: #3c3f42;
+            --osc-color-border-subtle: rgba(255, 255, 255, 0.08);
+            --osc-color-surface-subtle: rgba(255, 255, 255, 0.05);
             --osc-color-text: #f5f5f5;
             --osc-color-text-subtle: #d2d2d2;
-            --osc-color-muted: #b8bbbe; /* $pf-color-black-300 */
+            --osc-color-muted: #b8bbbe;
             --osc-color-progress-bg: rgba(0, 102, 204, 0.22);
-            --osc-color-card-shadow: rgba(0, 0, 0, 0.4);
-            --osc-color-card-shadow-strong: rgba(0, 0, 0, 0.55);
+            --osc-color-header-top: #001930;
+            --osc-color-header-bottom: #003d73;
         }
 
         header {
-            padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
-            background: linear-gradient(115deg, var(--osc-color-header-start), var(--osc-color-header-end));
+            padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 5vw, 3rem);
+            background: linear-gradient(130deg, var(--osc-color-header-top), var(--osc-color-header-bottom));
             color: #fff;
-            box-shadow: 0 20px 50px rgba(0, 59, 113, 0.25);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 12px 24px rgba(0, 47, 93, 0.18);
         }
 
         header h1 {
             margin: 0;
-            font-size: clamp(2rem, 3vw, 2.75rem);
+            font-size: clamp(1.85rem, 3vw, 2.4rem);
             font-weight: 600;
             letter-spacing: 0.01em;
         }
 
         .meta {
-            margin: 0.75rem 0 0;
+            margin: 0.5rem 0 0;
             font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.82);
         }
 
         main {
-            padding: clamp(1.5rem, 3vw, 3rem);
-            max-width: 1100px;
+            padding: clamp(1.25rem, 3vw, 2.5rem);
+            max-width: 1160px;
             margin: 0 auto;
             display: grid;
-            gap: 1.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.1rem;
         }
 
         .report-card {
             position: relative;
             background: var(--osc-color-surface);
-            border-radius: var(--osc-border-radius-lg);
-            padding: 1.75rem;
-            box-shadow: 0 18px 40px var(--osc-color-card-shadow);
-            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-radius: var(--osc-border-radius);
+            padding: 1.25rem;
+            border: 1px solid var(--osc-color-panel-border);
+            box-shadow: 0 1px 2px rgba(3, 3, 3, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
             overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            z-index: 0;
-        }
-
-        .report-card::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            border-radius: inherit;
-            border: 1px solid rgba(0, 102, 204, 0.06);
-            z-index: 1;
-        }
-
-        .report-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 24px 50px var(--osc-color-card-shadow-strong);
         }
 
         body.dark-mode .report-card {
-            border-color: rgba(255, 255, 255, 0.06);
+            border-color: var(--osc-color-panel-border);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+        }
+
+        .report-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border-left: 4px solid var(--osc-color-primary);
+            opacity: 0.9;
+            z-index: 1;
+        }
+
+        .report-card > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        .progress-card::before {
+            border-left-color: var(--osc-color-accent);
+        }
+
+        .progress-card {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.08), rgba(0, 47, 93, 0.02)), var(--osc-color-surface);
+            grid-column: 1 / -1;
         }
 
         .section-header {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            position: relative;
-        }
-
-        .section-header::after {
-            content: "";
-            flex: 1 1 auto;
-            height: 3px;
-            margin-left: 1rem;
-            border-radius: 999px;
-            background: linear-gradient(90deg, rgba(0, 102, 204, 0.55), rgba(0, 149, 150, 0.4));
-            opacity: 0.7;
+            gap: 0.75rem;
         }
 
         .section-header h2 {
             margin: 0;
-            font-size: clamp(1.25rem, 2vw, 1.6rem);
+            font-size: 1.15rem;
+            font-weight: 600;
             color: var(--osc-color-text);
-        }
-
-        .progress-card {
-            background: radial-gradient(circle at top left, rgba(115, 188, 247, 0.35), transparent 55%), var(--osc-color-surface);
         }
 
         .progress {
@@ -541,9 +536,24 @@ foreach ($sectionDefinitions as $id => $definition) {
         .progress-bar {
             height: 100%;
             width: 0;
-            background: linear-gradient(90deg, var(--osc-color-primary), var(--osc-color-primary-soft));
+            background: linear-gradient(90deg, var(--osc-color-primary), var(--osc-color-primary-strong));
             border-radius: inherit;
             transition: width 0.4s ease;
+        }
+
+        .loading {
+            position: relative;
+        }
+
+        .loading::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(120deg, rgba(0, 102, 204, 0.08), rgba(0, 75, 149, 0.05));
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .loading .loader {
@@ -552,59 +562,54 @@ foreach ($sectionDefinitions as $id => $definition) {
             gap: 1rem;
             color: var(--osc-color-muted);
             font-size: 0.95rem;
+            position: relative;
+            z-index: 1;
         }
 
         .loading .loader p {
             margin: 0;
-        }
-
-        .loading::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(120deg, rgba(0, 102, 204, 0.08), rgba(0, 149, 150, 0.04));
-            opacity: 0.55;
-            pointer-events: none;
-            z-index: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .spinner {
             width: 1.5rem;
             height: 1.5rem;
-            border: 3px solid rgba(0, 102, 204, 0.18);
+            border: 3px solid rgba(0, 102, 204, 0.15);
             border-top-color: var(--osc-color-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            position: relative;
+            z-index: 1;
         }
 
         body.dark-mode .spinner {
-            border-color: rgba(115, 188, 247, 0.25);
-            border-top-color: var(--osc-color-primary-soft);
+            border-color: rgba(0, 102, 204, 0.35);
+            border-top-color: var(--osc-color-primary);
         }
 
         .code-block {
             overflow-x: auto;
-            background: var(--osc-color-surface-alt);
-            border-radius: var(--osc-border-radius-md);
+            background: var(--osc-color-surface-subtle);
+            border-radius: var(--osc-border-radius-sm);
             padding: 1rem 1.25rem;
             font-size: 0.9rem;
             font-family: "Red Hat Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             color: var(--osc-color-text);
-            border: 1px solid var(--osc-color-surface-border);
+            border: 1px solid var(--osc-color-border-subtle);
         }
 
         body.dark-mode .code-block {
             background: rgba(0, 0, 0, 0.35);
-            border-color: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .error {
-            background: rgba(201, 25, 11, 0.12);
-            border-left: 4px solid var(--osc-color-accent-red);
-            border-radius: var(--osc-border-radius-md);
-            padding: 1rem 1.25rem;
-            color: #a11224;
+            background: rgba(201, 25, 11, 0.1);
+            border-left: 4px solid var(--osc-color-danger);
+            border-radius: var(--osc-border-radius-sm);
+            padding: 0.85rem 1rem;
+            color: #7d0c0c;
             font-weight: 500;
         }
 
@@ -615,37 +620,45 @@ foreach ($sectionDefinitions as $id => $definition) {
 
         .table-wrapper {
             overflow-x: auto;
-            margin: 0 -0.25rem;
-            padding: 0 0.25rem;
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 0.92rem;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
             color: var(--osc-color-text);
+            border: 1px solid var(--osc-color-border-subtle);
+            border-radius: var(--osc-border-radius-sm);
+            overflow: hidden;
         }
 
         thead tr {
-            background: linear-gradient(90deg, rgba(0, 102, 204, 0.12), rgba(0, 149, 150, 0.1));
+            background: linear-gradient(90deg, rgba(0, 102, 204, 0.16), rgba(0, 128, 128, 0.08));
+            color: var(--osc-color-primary-strong);
         }
 
         th,
         td {
-            padding: 0.75rem 0.9rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 0.55rem 0.85rem;
+            border-bottom: 1px solid var(--osc-color-border-subtle);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
         }
 
         tbody tr:nth-child(odd) {
-            background: rgba(0, 0, 0, 0.015);
+            background: rgba(0, 0, 0, 0.02);
         }
 
         tbody tr:hover {
-            background: rgba(0, 102, 204, 0.08);
+            background: rgba(0, 102, 204, 0.1);
         }
 
         body.dark-mode thead tr {
-            background: rgba(0, 102, 204, 0.28);
+            background: rgba(0, 102, 204, 0.32);
+            color: #e8f2ff;
         }
 
         body.dark-mode th,
@@ -658,7 +671,7 @@ foreach ($sectionDefinitions as $id => $definition) {
         }
 
         body.dark-mode tbody tr:hover {
-            background: rgba(0, 149, 150, 0.25);
+            background: rgba(0, 149, 150, 0.3);
         }
 
         .status-badge {
@@ -676,23 +689,23 @@ foreach ($sectionDefinitions as $id => $definition) {
         }
 
         .status-success {
-            background: rgba(62, 134, 53, 0.14);
-            color: var(--osc-color-accent-green);
+            background: rgba(62, 134, 53, 0.16);
+            color: var(--osc-color-success);
         }
 
         .status-warning {
-            background: rgba(244, 193, 69, 0.18);
-            color: var(--osc-color-accent-gold);
+            background: rgba(240, 171, 0, 0.16);
+            color: var(--osc-color-warning);
         }
 
         .status-danger {
-            background: rgba(201, 25, 11, 0.18);
-            color: var(--osc-color-accent-red);
+            background: rgba(201, 25, 11, 0.16);
+            color: var(--osc-color-danger);
         }
 
         .status-accent {
             background: rgba(0, 149, 150, 0.18);
-            color: var(--osc-color-accent-cyan);
+            color: var(--osc-color-accent);
         }
 
         .status-neutral {
