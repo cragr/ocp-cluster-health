@@ -121,8 +121,36 @@ $response = [
 try {
     switch ($section) {
         case 'cluster-status':
-            $output = shell_exec('oc get clusterversion');
-            $response['html'] = createTable($output, true);
+            $cv_output = shell_exec('oc get clusterversion');
+            if (!empty(trim($cv_output))) {
+                $lines = explode("\n", trim($cv_output));
+                $header = array_shift($lines);
+
+                $html = "<table class='data-table'>";
+                $html .= "<thead><tr><th>Name</th><th>Version</th><th>Available</th><th>Progressing</th><th>Since</th><th>Status</th></tr></thead>";
+                $html .= "<tbody>";
+
+                foreach ($lines as $line) {
+                    if (empty(trim($line))) continue;
+
+                    $parts = preg_split('/\s+/', trim($line), 6);
+                    if (count($parts) >= 4) {
+                        $html .= "<tr>";
+                        $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[1] ?? '') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[2] ?? '', 'available') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[3] ?? '', 'progressing') . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[4] ?? '') . "</td>";
+                        $html .= "<td>" . htmlspecialchars($parts[5] ?? '') . "</td>";
+                        $html .= "</tr>";
+                    }
+                }
+
+                $html .= "</tbody></table>";
+                $response['html'] = $html;
+            } else {
+                $response['html'] = "<div class='alert alert-info'>No cluster version data available</div>";
+            }
             $response['success'] = true;
             break;
 

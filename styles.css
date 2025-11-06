@@ -262,7 +262,7 @@ body {
 }
 
 .data-table th {
-    padding: var(--pf-spacer-md) var(--pf-spacer-lg);
+    padding: 10px var(--pf-spacer-lg);
     text-align: left;
     font-weight: 600;
     text-transform: uppercase;
@@ -274,7 +274,7 @@ body {
 }
 
 .data-table td {
-    padding: var(--pf-spacer-md) var(--pf-spacer-lg);
+    padding: 10px var(--pf-spacer-lg);
     border-bottom: 1px solid var(--pf-border-color);
     vertical-align: middle;
     color: var(--pf-text-color);
@@ -410,7 +410,7 @@ body {
 
     .data-table th,
     .data-table td {
-        padding: var(--pf-spacer-sm) var(--pf-spacer-md);
+        padding: 6px var(--pf-spacer-md);
     }
 
     .alert {
