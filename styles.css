@@ -1,0 +1,360 @@
+/* OpenShift Cluster Health Report - Professional Design */
+/* Based on OpenShift Console 4.20 and PatternFly v6 */
+
+:root {
+    /* PatternFly v6 Brand Colors */
+    --pf-color-blue-400: #0066CC;
+    --pf-color-blue-500: #004080;
+
+    /* Status Colors - PatternFly v6 */
+    --pf-status-success: #3E8635;
+    --pf-status-success-bg: #F3FAF2;
+    --pf-status-danger: #C9190B;
+    --pf-status-danger-bg: #FAEAE8;
+    --pf-status-warning: #F0AB00;
+    --pf-status-warning-bg: #FFF6E8;
+    --pf-status-info: #2B9AF3;
+    --pf-status-info-bg: #E7F1FA;
+
+    /* Neutral/Background Colors */
+    --pf-background-color: #FFFFFF;
+    --pf-background-light: #F0F0F0;
+    --pf-border-color: #D2D2D2;
+    --pf-border-color-dark: #C7C7C7;
+    --pf-text-color: #151515;
+    --pf-text-color-muted: #6A6E73;
+
+    /* Spacing */
+    --pf-spacer-xs: 4px;
+    --pf-spacer-sm: 8px;
+    --pf-spacer-md: 16px;
+    --pf-spacer-lg: 24px;
+    --pf-spacer-xl: 32px;
+
+    /* Typography */
+    --pf-font-size-sm: 12px;
+    --pf-font-size-md: 14px;
+    --pf-font-size-lg: 16px;
+    --pf-font-size-xl: 18px;
+    --pf-font-size-2xl: 20px;
+
+    /* Shadows */
+    --pf-shadow-sm: 0 1px 2px 0 rgba(3, 3, 3, 0.12);
+    --pf-shadow-md: 0 2px 4px 0 rgba(3, 3, 3, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'RedHatText', 'Overpass', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--pf-background-light);
+    color: var(--pf-text-color);
+    font-size: var(--pf-font-size-md);
+    line-height: 1.5;
+    padding: 0;
+    margin: 0;
+}
+
+.container {
+    max-width: 100%;
+    margin: 0;
+    background: var(--pf-background-color);
+    min-height: 100vh;
+}
+
+/* Loading Progress Bar */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: var(--pf-color-blue-400);
+    transition: width 0.3s ease;
+    z-index: 9999;
+}
+
+.progress-bar.complete {
+    opacity: 0;
+    transition: opacity 0.5s ease 0.3s;
+}
+
+/* Header */
+.header {
+    background: var(--pf-text-color);
+    color: white;
+    padding: var(--pf-spacer-lg) var(--pf-spacer-xl);
+    border-bottom: 3px solid var(--pf-color-blue-400);
+}
+
+.header h1 {
+    font-size: var(--pf-font-size-2xl);
+    font-weight: 400;
+    margin-bottom: var(--pf-spacer-xs);
+}
+
+.header .timestamp {
+    font-size: var(--pf-font-size-sm);
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+/* Content Area */
+.content {
+    padding: var(--pf-spacer-lg);
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Section Styles - Compact and Professional */
+.section {
+    margin-bottom: var(--pf-spacer-md);
+    background: var(--pf-background-color);
+    border: 1px solid var(--pf-border-color);
+    border-radius: 0;
+    transition: box-shadow 0.2s ease;
+}
+
+.section:hover {
+    box-shadow: var(--pf-shadow-md);
+}
+
+.section h2 {
+    color: var(--pf-text-color);
+    font-size: var(--pf-font-size-lg);
+    font-weight: 600;
+    padding: var(--pf-spacer-md) var(--pf-spacer-md);
+    margin: 0;
+    background: var(--pf-background-light);
+    border-bottom: 1px solid var(--pf-border-color);
+}
+
+.section-content {
+    padding: 0;
+}
+
+/* Loading State */
+.section.loading .section-content {
+    padding: var(--pf-spacer-md);
+    min-height: 60px;
+}
+
+.section.loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--pf-color-blue-400), transparent);
+    animation: loading-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Status Badges - Compact PatternFly Style */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: var(--pf-font-size-sm);
+    font-weight: 500;
+    text-transform: capitalize;
+    line-height: 1.4;
+}
+
+.status-ready,
+.status-available,
+.status-running,
+.status-completed,
+.status-true {
+    background-color: var(--pf-status-success-bg);
+    color: var(--pf-status-success);
+}
+
+.status-notready,
+.status-degraded,
+.status-progressing,
+.status-false {
+    background-color: var(--pf-status-warning-bg);
+    color: #795600;
+}
+
+.status-failed,
+.status-error,
+.status-critical {
+    background-color: var(--pf-status-danger-bg);
+    color: var(--pf-status-danger);
+}
+
+/* Compact Table Styles */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--pf-font-size-sm);
+    background: var(--pf-background-color);
+}
+
+.data-table thead {
+    background: var(--pf-background-light);
+    border-bottom: 2px solid var(--pf-border-color-dark);
+}
+
+.data-table th {
+    padding: var(--pf-spacer-sm) var(--pf-spacer-md);
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: var(--pf-font-size-sm);
+    letter-spacing: 0.5px;
+    color: var(--pf-text-color-muted);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: var(--pf-spacer-sm) var(--pf-spacer-md);
+    border-bottom: 1px solid var(--pf-border-color);
+    vertical-align: middle;
+}
+
+.data-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+    background-color: #F5F5F5;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Pre-formatted Output - More Compact */
+.raw-output {
+    background: #1E1E1E;
+    color: #D4D4D4;
+    padding: var(--pf-spacer-md);
+    overflow-x: auto;
+    font-family: 'Red Hat Mono', 'Courier New', monospace;
+    font-size: var(--pf-font-size-sm);
+    line-height: 1.4;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Alert Messages - PatternFly Style */
+.alert {
+    padding: var(--pf-spacer-md);
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--pf-spacer-sm);
+    font-size: var(--pf-font-size-sm);
+    border-left: 3px solid;
+}
+
+.alert-info {
+    background-color: var(--pf-status-info-bg);
+    color: #002952;
+    border-left-color: var(--pf-status-info);
+}
+
+.alert-success {
+    background-color: var(--pf-status-success-bg);
+    color: var(--pf-status-success);
+    border-left-color: var(--pf-status-success);
+}
+
+.alert-warning {
+    background-color: var(--pf-status-warning-bg);
+    color: #795600;
+    border-left-color: var(--pf-status-warning);
+}
+
+.alert-danger {
+    background-color: var(--pf-status-danger-bg);
+    color: var(--pf-status-danger);
+    border-left-color: var(--pf-status-danger);
+}
+
+/* Footer - Minimal */
+.footer {
+    text-align: center;
+    padding: var(--pf-spacer-lg);
+    background: var(--pf-background-light);
+    color: var(--pf-text-color-muted);
+    font-size: var(--pf-font-size-sm);
+    border-top: 1px solid var(--pf-border-color);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .content {
+        padding: var(--pf-spacer-md);
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: var(--pf-font-size-sm);
+    }
+
+    .header {
+        padding: var(--pf-spacer-md);
+    }
+
+    .header h1 {
+        font-size: var(--pf-font-size-xl);
+    }
+
+    .content {
+        padding: var(--pf-spacer-sm);
+    }
+
+    .section {
+        margin-bottom: var(--pf-spacer-sm);
+    }
+
+    .section h2 {
+        font-size: var(--pf-font-size-md);
+        padding: var(--pf-spacer-sm);
+    }
+
+    .data-table {
+        font-size: 11px;
+        display: block;
+        overflow-x: auto;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: var(--pf-spacer-xs) var(--pf-spacer-sm);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .progress-bar,
+    .footer {
+        display: none;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white;
+    }
+}
