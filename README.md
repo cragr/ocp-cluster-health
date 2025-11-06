@@ -1,9 +1,23 @@
 OCP Cluster Health Report
 ==========================
 
-The OCP Cluster Health Report provides a simple web-based health check for an OpenShift cluster. This quickstart guide will walk you through installing the cluster-health PHP application using a provided YAML configuration file.
+The OCP Cluster Health Report provides a modern, visually appealing web-based health check dashboard for monitoring OpenShift cluster health. This quickstart guide will walk you through installing the cluster-health PHP application using a provided YAML configuration file.
 
 ![Cluster Health Report Diagram](images/health_report.png)
+
+Features
+--------
+
+The redesigned status page includes:
+
+- **Modern Visual Design**: Gradient header, card-based sections, and professional styling
+- **Color-Coded Status Indicators**: Green (healthy), yellow (warning), and red (critical) badges for quick status recognition
+- **Responsive Layout**: Mobile-friendly design that adapts to different screen sizes
+- **Enhanced Data Tables**: Styled tables with hover effects and proper visual hierarchy
+- **Status Badges**: Visual indicators for node status, pod status, and operator health
+- **Alert Messages**: Clear visual alerts for critical events and system warnings
+- **Improved Readability**: Better typography, spacing, and visual organization
+- **Professional Appearance**: Clean, modern interface suitable for operations dashboards
 
 Quickstart Installation
 -----------------------
