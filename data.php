@@ -28,6 +28,29 @@ function getStatusBadge($status) {
     return "<span class='status-badge $class'>" . htmlspecialchars($status) . "</span>";
 }
 
+// Helper function for cluster operator status badges
+function getOperatorStatusBadge($value, $column) {
+    $value = strtolower(trim($value));
+
+    // Available: True = Green, False = Red
+    if ($column === 'available') {
+        $class = ($value === 'true') ? 'status-available' : 'status-failed';
+    }
+    // Progressing: False = Green, True = Yellow
+    elseif ($column === 'progressing') {
+        $class = ($value === 'false') ? 'status-ready' : 'status-progressing';
+    }
+    // Degraded: False = Green, True = Red
+    elseif ($column === 'degraded') {
+        $class = ($value === 'false') ? 'status-ready' : 'status-failed';
+    }
+    else {
+        $class = 'status-badge';
+    }
+
+    return "<span class='status-badge $class'>" . htmlspecialchars($value) . "</span>";
+}
+
 // Helper function to create a table from CLI output
 function createTable($output, $hasStatus = false) {
     if (empty(trim($output))) {
@@ -143,9 +166,9 @@ try {
                         $html .= "<tr>";
                         $html .= "<td>" . htmlspecialchars($parts[0]) . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[1] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[2] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[3] ?? '') . "</td>";
-                        $html .= "<td>" . getStatusBadge($parts[4] ?? '') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[2] ?? '', 'available') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[3] ?? '', 'progressing') . "</td>";
+                        $html .= "<td>" . getOperatorStatusBadge($parts[4] ?? '', 'degraded') . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[5] ?? '') . "</td>";
                         $html .= "<td>" . htmlspecialchars($parts[6] ?? '') . "</td>";
                         $html .= "</tr>";
