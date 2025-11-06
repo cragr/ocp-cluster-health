@@ -1,86 +1,3 @@
-<?php
-/**
- * OpenShift Cluster Health Report Dashboard
- * A visually appealing status page for monitoring OpenShift cluster health
- */
-
-// Helper function to parse and colorize status
-function getStatusBadge($status) {
-    $status = strtolower(trim($status));
-    $statusMap = [
-        'ready' => 'status-ready',
-        'available' => 'status-available',
-        'running' => 'status-running',
-        'completed' => 'status-completed',
-        'true' => 'status-true',
-        'notready' => 'status-notready',
-        'degraded' => 'status-degraded',
-        'progressing' => 'status-progressing',
-        'false' => 'status-false',
-        'failed' => 'status-failed',
-        'error' => 'status-error',
-        'critical' => 'status-critical',
-    ];
-
-    $class = $statusMap[$status] ?? 'status-badge';
-    return "<span class='status-badge $class'>" . htmlspecialchars($status) . "</span>";
-}
-
-// Helper function to create a table from CLI output
-function createTable($output, $hasStatus = false) {
-    if (empty(trim($output))) {
-        return "<div class='alert alert-info'>No data available</div>";
-    }
-
-    $lines = explode("\n", trim($output));
-    if (count($lines) < 2) {
-        return "<pre class='raw-output'>" . htmlspecialchars($output) . "</pre>";
-    }
-
-    $header = array_shift($lines);
-    $headers = preg_split('/\s{2,}/', trim($header));
-
-    $table = "<table class='data-table'><thead><tr>";
-    foreach ($headers as $h) {
-        $table .= "<th>" . htmlspecialchars($h) . "</th>";
-    }
-    $table .= "</tr></thead><tbody>";
-
-    foreach ($lines as $line) {
-        if (empty(trim($line))) continue;
-
-        $cells = preg_split('/\s{2,}/', trim($line));
-        $table .= "<tr>";
-
-        foreach ($cells as $index => $cell) {
-            if ($hasStatus && $index === 1) {
-                $table .= "<td>" . getStatusBadge($cell) . "</td>";
-            } else {
-                $table .= "<td>" . htmlspecialchars($cell) . "</td>";
-            }
-        }
-
-        $table .= "</tr>";
-    }
-
-    $table .= "</tbody></table>";
-    return $table;
-}
-
-// Helper function to parse resource usage and create meters
-function createResourceMeter($value) {
-    $percentage = intval($value);
-    $class = $percentage < 60 ? 'low' : ($percentage < 80 ? 'medium' : 'high');
-
-    return "
-        <div class='resource-meter'>
-            <div class='resource-meter-fill $class' style='width: {$percentage}%'>
-                {$percentage}%
-            </div>
-        </div>
-    ";
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,143 +23,75 @@ function createResourceMeter($value) {
         <div class="content">
 
             <!-- OpenShift Version -->
-            <div class="section">
+            <div class="section loading" id="section-version" data-section="version">
                 <h2>OpenShift Version</h2>
-                <?php
-                $version_output = shell_exec('oc get clusterversion');
-                echo createTable($version_output, true);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Cluster Version History -->
-            <div class="section">
+            <div class="section loading" id="section-version-history" data-section="version-history">
                 <h2>Cluster Version History</h2>
-                <?php
-                $cluster_version_output = shell_exec('oc get clusterversion version -o json | jq -r \'.status.history[] | "\(.version),\(.state),\(.startedTime),\(.completionTime)"\'');
-
-                if ($cluster_version_output) {
-                    echo "<table class='data-table'>";
-                    echo "<thead><tr>";
-                    echo "<th>Version</th><th>State</th><th>Started Time</th><th>Completed Time</th>";
-                    echo "</tr></thead><tbody>";
-
-                    $rows = explode("\n", trim($cluster_version_output));
-                    foreach ($rows as $row) {
-                        if (!empty($row)) {
-                            $fields = explode(",", $row);
-                            if (count($fields) >= 4) {
-                                echo "<tr>";
-                                echo "<td>" . htmlspecialchars($fields[0]) . "</td>";
-                                echo "<td>" . getStatusBadge($fields[1]) . "</td>";
-                                echo "<td>" . htmlspecialchars($fields[2]) . "</td>";
-                                echo "<td>" . htmlspecialchars($fields[3]) . "</td>";
-                                echo "</tr>";
-                            }
-                        }
-                    }
-
-                    echo "</tbody></table>";
-                } else {
-                    echo "<div class='alert alert-warning'>Failed to fetch cluster version information.</div>";
-                }
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Node Status -->
-            <div class="section">
+            <div class="section loading" id="section-nodes" data-section="nodes">
                 <h2>Node Status</h2>
-                <?php
-                $nodes_output = shell_exec('oc get nodes');
-                echo createTable($nodes_output, true);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Cluster Operators Status -->
-            <div class="section">
+            <div class="section loading" id="section-operators" data-section="operators">
                 <h2>Cluster Operators Status</h2>
-                <?php
-                $co_output = shell_exec('oc get co');
-                if (!empty(trim($co_output))) {
-                    $lines = explode("\n", trim($co_output));
-                    $header = array_shift($lines);
-
-                    echo "<table class='data-table'>";
-                    echo "<thead><tr><th>Name</th><th>Version</th><th>Available</th><th>Progressing</th><th>Degraded</th><th>Since</th><th>Message</th></tr></thead>";
-                    echo "<tbody>";
-
-                    foreach ($lines as $line) {
-                        if (empty(trim($line))) continue;
-
-                        $parts = preg_split('/\s+/', trim($line), 7);
-                        if (count($parts) >= 5) {
-                            echo "<tr>";
-                            echo "<td>" . htmlspecialchars($parts[0]) . "</td>";
-                            echo "<td>" . htmlspecialchars($parts[1] ?? '') . "</td>";
-                            echo "<td>" . getStatusBadge($parts[2] ?? '') . "</td>";
-                            echo "<td>" . getStatusBadge($parts[3] ?? '') . "</td>";
-                            echo "<td>" . getStatusBadge($parts[4] ?? '') . "</td>";
-                            echo "<td>" . htmlspecialchars($parts[5] ?? '') . "</td>";
-                            echo "<td>" . htmlspecialchars($parts[6] ?? '') . "</td>";
-                            echo "</tr>";
-                        }
-                    }
-
-                    echo "</tbody></table>";
-                } else {
-                    echo "<div class='alert alert-info'>No cluster operator data available</div>";
-                }
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Node Resource Usage -->
-            <div class="section">
+            <div class="section loading" id="section-node-resources" data-section="node-resources">
                 <h2>Node Resource Usage</h2>
-                <?php
-                $node_resources = shell_exec('oc adm top nodes');
-                echo createTable($node_resources);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Ingress Pod Status -->
-            <div class="section">
+            <div class="section loading" id="section-ingress-pods" data-section="ingress-pods">
                 <h2>Ingress Pod Status</h2>
-                <?php
-                $ingress_pods = shell_exec('oc get pods -n openshift-ingress');
-                echo createTable($ingress_pods, true);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Ingress Pod Resource Usage -->
-            <div class="section">
+            <div class="section loading" id="section-ingress-resources" data-section="ingress-resources">
                 <h2>Ingress Pod Resource Usage</h2>
-                <?php
-                $ingress_resources = shell_exec('oc adm top pods -n openshift-ingress');
-                echo createTable($ingress_resources);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Monitoring Pod Status -->
-            <div class="section">
+            <div class="section loading" id="section-monitoring-pods" data-section="monitoring-pods">
                 <h2>Monitoring Pod Status</h2>
-                <?php
-                $monitoring_pods = shell_exec('oc get pods -n openshift-monitoring');
-                echo createTable($monitoring_pods, true);
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
             <!-- Critical Events -->
-            <div class="section">
+            <div class="section loading" id="section-critical-events" data-section="critical-events">
                 <h2>Critical Events</h2>
-                <?php
-                $critical_events = shell_exec("oc get events --all-namespaces | grep -E 'Critical'");
-
-                if ($critical_events === null || trim($critical_events) === '') {
-                    echo "<div class='alert alert-success'>✓ No critical events found.</div>";
-                } else {
-                    echo "<div class='alert alert-danger'>⚠ Critical events detected!</div>";
-                    echo "<pre class='raw-output'>" . htmlspecialchars($critical_events) . "</pre>";
-                }
-                ?>
+                <div class="section-content">
+                    <div class="alert alert-info">Loading...</div>
+                </div>
             </div>
 
         </div>
@@ -254,52 +103,78 @@ function createResourceMeter($value) {
     </div>
 
     <script>
-        // Progress bar management
+        // Progressive section loading with progress bar
         document.addEventListener('DOMContentLoaded', function() {
             const progressBar = document.getElementById('progressBar');
-            const sections = document.querySelectorAll('.section');
+            const sections = document.querySelectorAll('.section[data-section]');
             const totalSections = sections.length;
             let loadedSections = 0;
 
             // Initialize progress
-            updateProgress(10);
+            updateProgress(5);
 
-            // Create an observer to track when sections come into view
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !entry.target.classList.contains('loaded')) {
-                        entry.target.classList.add('loaded');
+            // Load sections sequentially
+            async function loadAllSections() {
+                updateProgress(10);
+
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
+                    const sectionName = section.getAttribute('data-section');
+
+                    try {
+                        await loadSection(section, sectionName);
+                        loadedSections++;
+                        updateProgress(10 + (loadedSections / totalSections) * 85);
+                    } catch (error) {
+                        console.error(`Failed to load section ${sectionName}:`, error);
+                        const contentDiv = section.querySelector('.section-content');
+                        contentDiv.innerHTML = '<div class="alert alert-danger">Failed to load data</div>';
+                        section.classList.remove('loading');
                         loadedSections++;
                         updateProgress(10 + (loadedSections / totalSections) * 85);
                     }
-                });
-            }, {
-                threshold: 0.1
-            });
 
-            // Observe all sections
-            sections.forEach((section, index) => {
-                section.style.animationDelay = `${index * 0.1}s`;
-                observer.observe(section);
-            });
+                    // Small delay between sections for visual effect
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Complete the progress bar
+                updateProgress(100);
+            }
+
+            // Load individual section data
+            async function loadSection(sectionElement, sectionName) {
+                const response = await fetch(`data.php?section=${sectionName}`);
+                const data = await response.json();
+
+                const contentDiv = sectionElement.querySelector('.section-content');
+
+                if (data.success) {
+                    contentDiv.innerHTML = data.html;
+                } else {
+                    contentDiv.innerHTML = `<div class="alert alert-danger">${data.error || 'Failed to load'}</div>`;
+                }
+
+                sectionElement.classList.remove('loading');
+            }
 
             // Update progress bar width
             function updateProgress(percentage) {
                 progressBar.style.width = percentage + '%';
 
-                if (percentage >= 95) {
+                if (percentage >= 100) {
                     setTimeout(() => {
-                        progressBar.style.width = '100%';
-                        setTimeout(() => {
-                            progressBar.classList.add('complete');
-                        }, 300);
-                    }, 200);
+                        progressBar.classList.add('complete');
+                    }, 300);
                 }
             }
 
-            // Mark page as fully loaded
-            window.addEventListener('load', function() {
-                updateProgress(100);
+            // Start loading sections
+            loadAllSections();
+
+            // Add staggered animation delays
+            sections.forEach((section, index) => {
+                section.style.animationDelay = `${index * 0.1}s`;
             });
         });
 

@@ -125,16 +125,8 @@ body {
     padding: 25px;
     transition: all 0.3s ease;
     border-left: 4px solid var(--primary-color);
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeInUp 0.5s ease forwards;
-}
-
-@keyframes fadeInUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .section:hover {
@@ -143,25 +135,64 @@ body {
 }
 
 .section.loading {
-    min-height: 150px;
+    min-height: 100px;
     position: relative;
     overflow: hidden;
 }
 
-.section.loading::after {
+.section.loading .section-content {
+    opacity: 0.6;
+}
+
+.section.loading::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 100%;
+    left: -150%;
+    width: 150%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shimmer 1.5s infinite;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 102, 204, 0.1) 25%,
+        rgba(132, 118, 209, 0.15) 50%,
+        rgba(0, 102, 204, 0.1) 75%,
+        transparent 100%
+    );
+    animation: shimmer 2s infinite;
+    z-index: 1;
+    pointer-events: none;
 }
 
 @keyframes shimmer {
-    to {
+    0% {
+        left: -150%;
+    }
+    100% {
         left: 100%;
+    }
+}
+
+.section.loading::after {
+    content: '⏳';
+    position: absolute;
+    top: 50%;
+    right: 25px;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    opacity: 0.5;
+    animation: pulse 1.5s ease-in-out infinite;
+    z-index: 2;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: translateY(-50%) scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateY(-50%) scale(1.1);
     }
 }
 
@@ -446,19 +477,6 @@ body {
     }
 }
 
-/* Loading Animation */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-.loading {
-    animation: pulse 2s ease-in-out infinite;
-}
 
 /* Footer */
 .footer {
