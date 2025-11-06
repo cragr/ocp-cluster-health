@@ -234,16 +234,104 @@ function renderCriticalEvents(): string
         . '</section>';
 }
 
-$sections = [];
-$sections[] = renderCommandSection('Cluster Version', ['oc', 'get', 'clusterversion']);
-$sections[] = renderClusterVersionHistory();
-$sections[] = renderCommandSection('Node Status', ['oc', 'get', 'nodes']);
-$sections[] = renderCommandSection('Cluster Operator Status', ['oc', 'get', 'co']);
-$sections[] = renderCommandSection('Node Resource Usage', ['oc', 'adm', 'top', 'nodes']);
-$sections[] = renderCommandSection('Ingress Pod Status', ['oc', 'get', 'pods', '-n', 'openshift-ingress']);
-$sections[] = renderCommandSection('Ingress Pod Resource Usage', ['oc', 'adm', 'top', 'pods', '-n', 'openshift-ingress']);
-$sections[] = renderCommandSection('Monitoring Pod Status', ['oc', 'get', 'pods', '-n', 'openshift-monitoring']);
-$sections[] = renderCriticalEvents();
+/**
+ * Returns metadata and render callbacks for each report section.
+ *
+ * @return array<string, array{title: string, renderer: callable}>
+ */
+function getSectionDefinitions(): array
+{
+    return [
+        'cluster-version' => [
+            'title' => 'Cluster Version',
+            'renderer' => function (): string {
+                return renderCommandSection('Cluster Version', ['oc', 'get', 'clusterversion']);
+            },
+        ],
+        'cluster-version-history' => [
+            'title' => 'Cluster Version History',
+            'renderer' => function (): string {
+                return renderClusterVersionHistory();
+            },
+        ],
+        'node-status' => [
+            'title' => 'Node Status',
+            'renderer' => function (): string {
+                return renderCommandSection('Node Status', ['oc', 'get', 'nodes']);
+            },
+        ],
+        'cluster-operator-status' => [
+            'title' => 'Cluster Operator Status',
+            'renderer' => function (): string {
+                return renderCommandSection('Cluster Operator Status', ['oc', 'get', 'co']);
+            },
+        ],
+        'node-resource-usage' => [
+            'title' => 'Node Resource Usage',
+            'renderer' => function (): string {
+                return renderCommandSection('Node Resource Usage', ['oc', 'adm', 'top', 'nodes']);
+            },
+        ],
+        'ingress-pod-status' => [
+            'title' => 'Ingress Pod Status',
+            'renderer' => function (): string {
+                return renderCommandSection('Ingress Pod Status', ['oc', 'get', 'pods', '-n', 'openshift-ingress']);
+            },
+        ],
+        'ingress-pod-resource-usage' => [
+            'title' => 'Ingress Pod Resource Usage',
+            'renderer' => function (): string {
+                return renderCommandSection('Ingress Pod Resource Usage', ['oc', 'adm', 'top', 'pods', '-n', 'openshift-ingress']);
+            },
+        ],
+        'monitoring-pod-status' => [
+            'title' => 'Monitoring Pod Status',
+            'renderer' => function (): string {
+                return renderCommandSection('Monitoring Pod Status', ['oc', 'get', 'pods', '-n', 'openshift-monitoring']);
+            },
+        ],
+        'critical-events' => [
+            'title' => 'Critical Events',
+            'renderer' => function (): string {
+                return renderCriticalEvents();
+            },
+        ],
+    ];
+}
+
+$sectionDefinitions = getSectionDefinitions();
+
+if (isset($_GET['section'])) {
+    $sectionKey = (string)$_GET['section'];
+
+    if (!isset($sectionDefinitions[$sectionKey])) {
+        http_response_code(404);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'ok' => false,
+            'error' => 'Unknown section requested.',
+        ]);
+        exit;
+    }
+
+    $renderer = $sectionDefinitions[$sectionKey]['renderer'];
+    $html = (string)call_user_func($renderer);
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'ok' => true,
+        'html' => $html,
+    ]);
+    exit;
+}
+
+$sectionMeta = [];
+foreach ($sectionDefinitions as $id => $definition) {
+    $sectionMeta[] = [
+        'id' => $id,
+        'title' => $definition['title'],
+    ];
+}
 
 ?><!DOCTYPE html>
 <html lang="en">
@@ -291,6 +379,52 @@ $sections[] = renderCriticalEvents();
         body.dark-mode section {
             background: #1c1c1c;
             box-shadow: 0 1px 4px rgba(255, 255, 255, 0.08);
+        }
+
+        .progress-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress {
+            width: 100%;
+            height: 0.6rem;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 999px;
+            margin-bottom: 0.75rem;
+        }
+
+        body.dark-mode .progress {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #00a1e0;
+            border-radius: 999px;
+            transition: width 0.3s ease;
+        }
+
+        .loading .loader {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        .spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #00a1e0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        body.dark-mode .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            border-top-color: #4dd0ff;
         }
 
         h1 {
@@ -363,6 +497,12 @@ $sections[] = renderCriticalEvents();
         .table-wrapper {
             overflow-x: auto;
         }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -371,7 +511,23 @@ $sections[] = renderCriticalEvents();
         <p class="meta">Report generated on <?php echo htmlspecialchars(date('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?></p>
     </header>
     <main>
-        <?php echo implode('\n', $sections); ?>
+        <section class="progress-card">
+            <h2>Preparing Report</h2>
+            <div class="progress" aria-live="polite" aria-label="Report progress">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progress-text">Starting data collection…</p>
+        </section>
+
+        <?php foreach ($sectionMeta as $meta): ?>
+            <section id="section-<?php echo htmlspecialchars($meta['id'], ENT_QUOTES, 'UTF-8'); ?>" class="loading">
+                <h2><?php echo htmlspecialchars($meta['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                <div class="loader">
+                    <div class="spinner" role="presentation"></div>
+                    <p>Gathering data…</p>
+                </div>
+            </section>
+        <?php endforeach; ?>
     </main>
     <script>
         (function () {
@@ -379,6 +535,88 @@ $sections[] = renderCriticalEvents();
                 document.body.classList.add('dark-mode');
             }
         })();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var sections = <?php echo json_encode($sectionMeta, JSON_UNESCAPED_SLASHES); ?>;
+            var progressBar = document.getElementById('progress-bar');
+            var progressText = document.getElementById('progress-text');
+            var total = sections.length;
+            var completed = 0;
+
+            function updateProgress(message) {
+                var safeCompleted = Math.min(completed, total);
+                var percent = total === 0 ? 100 : Math.round((safeCompleted / total) * 100);
+                if (progressBar) {
+                    progressBar.style.width = percent + '%';
+                }
+                if (progressText) {
+                    progressText.textContent = message;
+                }
+            }
+
+            function markSectionError(section, errorMessage) {
+                var placeholder = document.getElementById('section-' + section.id);
+                if (!placeholder) {
+                    return;
+                }
+
+                placeholder.classList.remove('loading');
+                placeholder.innerHTML = '';
+
+                var heading = document.createElement('h2');
+                heading.textContent = section.title;
+                placeholder.appendChild(heading);
+
+                var errorBox = document.createElement('div');
+                errorBox.className = 'error';
+                errorBox.textContent = errorMessage;
+                placeholder.appendChild(errorBox);
+            }
+
+            function markSectionComplete(sectionId, html) {
+                var placeholder = document.getElementById('section-' + sectionId);
+                if (!placeholder) {
+                    return;
+                }
+
+                placeholder.outerHTML = html;
+            }
+
+            (async function loadSections() {
+                for (var i = 0; i < sections.length; i++) {
+                    var section = sections[i];
+                    updateProgress('Collecting ' + section.title + '…');
+
+                    try {
+                        var response = await fetch('?section=' + encodeURIComponent(section.id), {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Request failed with status ' + response.status);
+                        }
+
+                        var payload = await response.json();
+                        if (!payload.ok || typeof payload.html !== 'string') {
+                            throw new Error(payload.error || 'Unexpected response');
+                        }
+
+                        markSectionComplete(section.id, payload.html);
+                    } catch (error) {
+                        markSectionError(section, error instanceof Error ? error.message : 'Unknown error');
+                    }
+
+                    completed += 1;
+                    updateProgress(completed === total ? 'Report ready.' : 'Collected ' + section.title + '.');
+                }
+
+                if (total === 0) {
+                    updateProgress('No sections to load.');
+                }
+            })();
+        });
     </script>
 </body>
 </html>
